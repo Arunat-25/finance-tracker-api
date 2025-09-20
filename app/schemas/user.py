@@ -11,6 +11,10 @@ class UserCreate(UserBase):
     password: str
     email: EmailStr
 
+class UserCheck(UserBase):
+    email: EmailStr
+    password: str
+
 class UserSchema(UserBase):
     id: int
     name: str

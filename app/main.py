@@ -6,8 +6,7 @@ from uvicorn import Config
 from app.db.session import engine
 from app.db.base_class import Base
 from app.endpoints.auth import router as auth_router
-
-
+from tests.session import test_engine
 
 app = FastAPI()
 
@@ -20,7 +19,7 @@ async def create_tables():
 
 async def main():
     await create_tables()
-    config = Config(app="main:app", port=8001)
+    config = Config(app="main:app", port=8001, reload=True)
     server = uvicorn.Server(config=config)
     await server.serve()
 

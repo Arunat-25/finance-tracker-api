@@ -1,35 +1,56 @@
 from fastapi import HTTPException
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, MultipleResultsFound
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import session_factory
+from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered
 from app.models.user import UserOrm
-from app.common.security import hash_password
-from app.schemas.user import UserCreate
+from app.common.security import hash_password, check_password
+from app.schemas.user import UserCreate, UserCheck
 
 
-async def create_user(new_user: UserCreate):
+async def create_user(session: AsyncSession, new_user: UserCreate):
     try:
-        async with session_factory() as sess:
-            hashed_password = hash_password(new_user.password)
-            user = UserOrm(
-                name=new_user.name,
-                email=new_user.email,
-                hashed_password=hashed_password,
-                is_verified=False
-            )
-            sess.add(user)
-            await sess.commit()
-            await sess.refresh(user)
-            return user
+
+        hashed_password = hash_password(new_user.password)
+        user = UserOrm(
+            name=new_user.name,
+            email=new_user.email,
+            hashed_password=hashed_password,
+            is_verified=False
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        return user
 
     except IntegrityError:
-        raise HTTPException(
-            status_code=400,
-            detail="Email используется другим аккаунтом"
-        )
-    except Exception as e:
+        raise EmailAlreadyExists("Email используется другим аккаунтом")
+    except Exception:
         raise HTTPException(
             status_code=500,
-            detail=f"Ошибка при создании пользователя: {str(e)}"
+            detail=f"Ошибка при создании пользователя"
         )
+
+async def check_user(user: UserCheck):
+    try:
+        async with session_factory() as sess:
+            stmt = select(UserOrm).where(UserOrm.email == user.email)
+            res = await sess.execute(stmt)
+            db_user = res.scalar_one_or_none()
+            if db_user:
+                if check_password(user.password, db_user.hashed_password):
+                    return {"success": True}
+                raise PasswordIsIncorrect("Неправильный пароль")
+            raise NotRegistered("Пользователь не зарегистрирован")
+    except (PasswordIsIncorrect, NotRegistered):
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при входе"
+        )
+
+
