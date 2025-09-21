@@ -54,13 +54,19 @@ async def check_user(user: UserCheck):
         )
 
 
-async def get_user(email: str):
+async def get_user(user_id: int = None, email: str = None):
     async with session_factory() as sess:
-        stmt = select(UserOrm).where(UserOrm.email == email)
+        if user_id:
+            stmt = select(UserOrm).where(UserOrm.id == user_id)
+        elif email:
+            stmt = select(UserOrm).where(UserOrm.email == email)
+
         res = await sess.execute(stmt)
         db_user = res.scalar_one_or_none()
         if db_user:
             return db_user
+
+
 
 
 

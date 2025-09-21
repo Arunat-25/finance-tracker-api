@@ -1,3 +1,6 @@
+import datetime
+
+from sqlalchemy import text
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
@@ -10,6 +13,10 @@ class RefreshTokenOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     refresh_token: Mapped[str]
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    entry_updated_at: Mapped[datetime.datetime] = mapped_column(
+        server_default=text("TIMEZONE('utc', now())"),
+        onupdate=datetime.datetime.utcnow
+    )
 
     user: Mapped["UserOrm"] = relationship(back_populates="refresh_token")

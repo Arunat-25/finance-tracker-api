@@ -6,3 +6,6 @@ class PasswordIsIncorrect(Exception):
 
 class NotRegistered(Exception):
     pass
+
+class NotFoundToken(Exception):
+    pass

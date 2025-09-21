@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,7 +12,7 @@ class UserOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
-    email: Mapped[str] = mapped_column(unique=True)
+    email: Mapped[str] = mapped_column(unique=True, index=True)
     hashed_password: Mapped[bytes]
     is_verified: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
@@ -21,3 +21,7 @@ class UserOrm(Base):
                                                                  back_populates="user",
                                                                  uselist=False,
                                                                  cascade="all, delete")
+    accounts: Mapped[List["AccountOrm"]] = relationship("AccountOrm",
+                                                           back_populates="user",
+                                                           uselist=True,
+                                                           cascade="all, delete")
