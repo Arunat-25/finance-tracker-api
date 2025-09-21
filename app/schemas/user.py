@@ -6,14 +6,17 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 class UserBase(BaseModel):
     pass
 
+
 class UserCreate(UserBase):
     name: str
     password: str
     email: EmailStr
 
+
 class UserCheck(UserBase):
     email: EmailStr
     password: str
+
 
 class UserSchema(UserBase):
     id: int

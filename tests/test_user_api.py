@@ -14,6 +14,7 @@ from tests.fixtures_user import delete_test_user
 
 @pytest.mark.asyncio
 async def test_user_register_when_duplicate_email(db_session):
+    assert settings.MODE == "TEST"
     stmt = select(UserOrm).where(UserOrm.email == "test@gmail.com")
     res = await db_session.execute(stmt)
     user = res.scalar_one_or_none()
@@ -34,10 +35,10 @@ async def test_user_register_when_duplicate_email(db_session):
 
 @pytest.mark.asyncio
 async def test_user_register(db_session, delete_test_user):
+    assert settings.MODE == "TEST"
     stmt = select(UserOrm).where(UserOrm.email == "test@gmail.com")
     res = await db_session.execute(stmt)
     user = res.scalar_one_or_none()
-    print("123", user is None)
     if user:
         await db_session.delete(user)
         await db_session.commit()

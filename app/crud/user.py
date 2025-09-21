@@ -13,7 +13,6 @@ from app.schemas.user import UserCreate, UserCheck
 
 async def create_user(session: AsyncSession, new_user: UserCreate):
     try:
-
         hashed_password = hash_password(new_user.password)
         user = UserOrm(
             name=new_user.name,
@@ -45,6 +44,7 @@ async def check_user(user: UserCheck):
                     return {"success": True}
                 raise PasswordIsIncorrect("Неправильный пароль")
             raise NotRegistered("Пользователь не зарегистрирован")
+
     except (PasswordIsIncorrect, NotRegistered):
         raise
     except Exception:
@@ -52,5 +52,23 @@ async def check_user(user: UserCheck):
             status_code=500,
             detail=f"Ошибка при входе"
         )
+
+
+async def get_user(email: str):
+    async with session_factory() as sess:
+        stmt = select(UserOrm).where(UserOrm.email == email)
+        res = await sess.execute(stmt)
+        db_user = res.scalar_one_or_none()
+        if db_user:
+            return db_user
+
+
+
+
+
+
+
+
+
 
 

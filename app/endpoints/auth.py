@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
-from app.crud.user import create_user, check_user
+from app.common.security import create_token
+from app.crud.refresh_token import add_refresh_token
+from app.crud.user import create_user, check_user, get_user
 from app.db.session import session_factory
 from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered
+from app.schemas.refresh_token import RefreshTokenCreate
 from app.schemas.user import UserSchema, UserCreate, UserCheck
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -15,10 +18,25 @@ async def register(new_user: UserCreate):
     except EmailAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.post("/authenticate/")
 async def login(user: UserCheck):
     try:
-        return await check_user(user)
+        await check_user(user)
+        user_dict = {"email": user.email}
+        access_token = create_token(user_dict, token_type="access")
+        refresh_token = create_token(user_dict, token_type="refresh")
+
+        user_for_add_token_in_db = await get_user(user.email)
+        refresh_token_for_add_in_db = RefreshTokenCreate(refresh_token=refresh_token, user_id=user_for_add_token_in_db.id)
+        await add_refresh_token(refresh_token_for_add_in_db)
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "refresh_token": refresh_token
+        }
+
     except PasswordIsIncorrect as e:
         raise HTTPException(status_code=401, detail=str(e))
     except NotRegistered as e:

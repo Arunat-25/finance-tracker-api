@@ -13,12 +13,8 @@ app = FastAPI()
 app.include_router(auth_router)
 
 
-async def create_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 async def main():
-    await create_tables()
     config = Config(app="main:app", port=8001, reload=True)
     server = uvicorn.Server(config=config)
     await server.serve()
