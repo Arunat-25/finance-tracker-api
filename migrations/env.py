@@ -8,6 +8,7 @@ from alembic import context
 from app.common.config import settings
 from app.models.user import UserOrm
 from app.models.refresh_token import RefreshTokenOrm
+from app.models.account import AccountOrm
 from app.db.base_class import Base
 
 

@@ -9,3 +9,6 @@ class NotRegistered(Exception):
 
 class NotFoundToken(Exception):
     pass
+
+class NotFoundAccount(Exception):
+    pass

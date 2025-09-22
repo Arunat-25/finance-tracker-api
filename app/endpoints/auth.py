@@ -47,7 +47,7 @@ async def login(user: UserCheck):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/refresh/")
+@router.put("/refresh/")
 async def update_refresh(refresh_token: RefreshTokenUpdate):
     try:
         return await update_refresh_token(refresh_token)
