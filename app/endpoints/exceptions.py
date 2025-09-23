@@ -12,3 +12,6 @@ class NotFoundToken(Exception):
 
 class NotFoundAccount(Exception):
     pass
+
+class AccountAlreadyExists(Exception):
+    pass

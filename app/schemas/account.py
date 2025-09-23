@@ -29,7 +29,7 @@ class AccountCreate(Account):
     name: str
     balance: float = 0
     currency: Optional[CurrencyEnum] = None
-    user_id: int
+
 
 class AccountDelete(Account):
-    id: int
+    name: str

@@ -12,4 +12,3 @@ class RefreshTokenCreate(RefreshTokenBase):
 
 class RefreshTokenUpdate(RefreshTokenBase):
     refresh_token: str
-    user_id: int

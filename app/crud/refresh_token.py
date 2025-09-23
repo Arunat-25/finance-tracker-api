@@ -2,7 +2,7 @@ from pycparser.ply.yacc import token
 from sqlalchemy import select, exists
 from sqlalchemy.orm import joinedload
 
-from app.common.security import create_token
+from app.common.security import create_token, decode_token
 from app.crud.user import get_user
 from app.db.session import session_factory
 from app.endpoints.exceptions import NotFoundToken
@@ -26,9 +26,10 @@ async def add_refresh_token(refresh_token: RefreshTokenCreate):
 
 
 async def update_refresh_token(refresh_token: RefreshTokenUpdate):
+    decoded_token = decode_token(refresh_token.refresh_token)
     async with session_factory() as session:
         stmt = select(RefreshTokenOrm).options(joinedload(RefreshTokenOrm.user)).where(
-            RefreshTokenOrm.user_id == refresh_token.user_id
+            RefreshTokenOrm.user_id == decoded_token["user_id"]
         )
         res = await session.execute(stmt)
         db_refresh_token = res.scalar_one_or_none()

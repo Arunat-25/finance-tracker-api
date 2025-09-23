@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends
+from fastapi.security import HTTPAuthorizationCredentials
 from select import select
 
+from app.auth import bearer_scheme
 from app.common.security import create_token
 from app.crud.refresh_token import add_refresh_token, update_refresh_token
 from app.crud.user import create_user, check_user, get_user
@@ -48,8 +50,10 @@ async def login(user: UserCheck):
 
 
 @router.put("/refresh/")
-async def update_refresh(refresh_token: RefreshTokenUpdate):
+async def update_refresh(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    refresh_token = credentials.credentials
+    refresh_token_to_change = RefreshTokenUpdate(refresh_token=refresh_token)
     try:
-        return await update_refresh_token(refresh_token)
+        return await update_refresh_token(refresh_token_to_change)
     except NotFoundToken as e:
         raise HTTPException(status_code=404, detail=str(e))
