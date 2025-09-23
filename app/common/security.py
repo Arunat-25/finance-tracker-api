@@ -36,11 +36,20 @@ def decode_token(token: str) -> dict:
         return jwt.decode(token, public_key, algorithms=["RS256"])
 
     except ExpiredSignatureError:
-        return {"Success": Falsee, "detail": "Token expired"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired"
+        )
     except JWTError:
-        return {"Success": Fa, "detail": "Invalid token"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
     except FileNotFoundError:
-        return {"Success": Fasle, "detail": "Public key not found"}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Public key not found"
+        )
 
 
 
