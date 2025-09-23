@@ -1,6 +1,9 @@
 from datetime import timezone, datetime, timedelta
 import bcrypt
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
+
+from fastapi import HTTPException
 
 
 
@@ -33,17 +36,11 @@ def decode_token(token: str) -> dict:
         return jwt.decode(token, public_key, algorithms=["RS256"])
 
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired"
-        )
+        return {"Success": Falsee, "detail": "Token expired"}
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
+        return {"Success": Fa, "detail": "Invalid token"}
     except FileNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Public key not found"
-        )
+        return {"Success": Fasle, "detail": "Public key not found"}
+
+
+

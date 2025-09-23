@@ -19,7 +19,7 @@ async def add_account(account: AccountCreate):
         await session.refresh(account_to_add)
 
     return {
-        "id": account.id,
+        "id": account_to_add.id,
         "name": account_to_add.name,
         "balance": account_to_add.balance,
         "currency": account_to_add.currency,

@@ -22,11 +22,11 @@ async def register(new_user: UserCreate):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/authenticate/")
+@router.post("/login/")
 async def login(user: UserCheck):
     try:
-        await check_user(user)
-        user_dict = {"email": user.email}
+        checked_user = await check_user(user)
+        user_dict = checked_user
         access_token = create_token(user_dict, token_type="access")
         refresh_token = create_token(user_dict, token_type="refresh")
 

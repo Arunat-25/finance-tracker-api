@@ -33,6 +33,7 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
             detail=f"Ошибка при создании пользователя"
         )
 
+
 async def check_user(user: UserCheck):
     try:
         async with session_factory() as sess:
@@ -41,7 +42,11 @@ async def check_user(user: UserCheck):
             db_user = res.scalar_one_or_none()
             if db_user:
                 if check_password(user.password, db_user.hashed_password):
-                    return {"success": True}
+                    return {
+                        "user_id": db_user.id,
+                        "name": db_user.name,
+                        "email": db_user.email,
+                    }
                 raise PasswordIsIncorrect("Неправильный пароль")
             raise NotRegistered("Пользователь не зарегистрирован")
 
