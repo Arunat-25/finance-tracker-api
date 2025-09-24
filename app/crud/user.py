@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import session_factory
 from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered
 from app.models.user import UserOrm
-from app.common.security import hash_password, check_password
+from app.common.security import hash_password, check_password, create_verify_token
 from app.schemas.user import UserCreate, UserCheck
 
 
@@ -18,7 +18,8 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
             name=new_user.name,
             email=new_user.email,
             hashed_password=hashed_password,
-            is_verified=False
+            is_verified=False,
+            verification_token=create_verify_token(),
         )
         session.add(user)
         await session.commit()
@@ -26,7 +27,7 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
         return user
 
     except IntegrityError:
-        raise EmailAlreadyExists("Email используется другим аккаунтом")
+        raise EmailAlreadyExists("Email уже зарегистрирован")
     except Exception:
         raise HTTPException(
             status_code=500,

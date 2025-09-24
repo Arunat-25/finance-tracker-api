@@ -19,9 +19,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(new_user: UserCreate):
     try:
         async with session_factory() as session:
-            return await create_user(session, new_user)
+            user = await create_user(session, new_user)
+            return user
     except EmailAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # написать функцию отправки имейла. и вызвать здесь. Спустить return вниз, где стоит комментарий
+    # return await create_user(session, new_user)
 
 
 @router.post("/login/")

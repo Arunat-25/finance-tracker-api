@@ -12,7 +12,7 @@ class AccountOrm(Base):
     name: Mapped[str] = mapped_column(nullable=False, index=True) # проиндексирован, так как удаляется по name
     balance: Mapped[float] = mapped_column(default=0.0)
     currency: Mapped[str] = mapped_column(default='RUB')
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     user: Mapped["UserOrm"] = relationship(back_populates="accounts")
 

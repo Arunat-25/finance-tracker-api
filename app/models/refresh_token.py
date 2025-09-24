@@ -13,7 +13,7 @@ class RefreshTokenOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     refresh_token: Mapped[str]
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
     entry_updated_at: Mapped[datetime.datetime] = mapped_column(
         server_default=text("TIMEZONE('utc', now())"),
         onupdate=datetime.datetime.utcnow

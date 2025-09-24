@@ -1,5 +1,5 @@
 from datetime import timezone, datetime, timedelta
-import bcrypt
+import bcrypt, secrets
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 
@@ -50,6 +50,10 @@ def decode_token(token: str) -> dict:
             status_code=500,
             detail="Public key not found"
         )
+
+
+def create_verify_token():
+    return secrets.token_urlsafe(32)
 
 
 
