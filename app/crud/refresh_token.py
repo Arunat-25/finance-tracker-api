@@ -34,7 +34,7 @@ async def update_refresh_token(refresh_token: RefreshTokenUpdate):
         res = await session.execute(stmt)
         db_refresh_token = res.scalar_one_or_none()
         if not db_refresh_token or db_refresh_token.refresh_token != refresh_token.refresh_token:
-            raise NotFoundToken("Токена в БД нет")
+            raise NotFoundToken("Token not found")
 
         new_refresh_token = create_token({"email": db_refresh_token.user.email}, "refresh")
         new_access_token = create_token({"email": db_refresh_token.user.email}, "access")

@@ -1,37 +1,49 @@
-from fastapi import APIRouter, HTTPException, Response, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Response, Depends, Body
+from fastapi.params import Query
 from fastapi.security import HTTPAuthorizationCredentials
-from select import select
+from pydantic import EmailStr
+from sqlalchemy import select
 
 from app.auth import bearer_scheme
-from app.common.security import create_token
+from app.common.security import create_token, check_verify_token
+from app.common.email import conf, send_email
+from app.crud.email import is_email_verified
 from app.crud.refresh_token import add_refresh_token, update_refresh_token
-from app.crud.user import create_user, check_user, get_user
+from app.crud.user import create_user, check_user, get_user, remove_user
 from app.db.session import session_factory
 from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered, NotFoundToken
 from app.models.refresh_token import RefreshTokenOrm
+from app.models.user import UserOrm
+from app.schemas.email import EmailReceiveAgain
 from app.schemas.refresh_token import RefreshTokenCreate, RefreshTokenUpdate
 from app.schemas.user import UserSchema, UserCreate, UserCheck
-from tests import session
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post('/register/', response_model=UserSchema, status_code=201)
+@router.post('/register', response_model=UserSchema, status_code=201)
 async def register(new_user: UserCreate):
     try:
         async with session_factory() as session:
             user = await create_user(session, new_user)
-            return user
+        await send_email(user.email, user.verification_token)
+        return user
     except EmailAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))
-    # написать функцию отправки имейла. и вызвать здесь. Спустить return вниз, где стоит комментарий
-    # return await create_user(session, new_user)
 
 
-@router.post("/login/")
+@router.post("/login")
 async def login(user: UserCheck):
     try:
         checked_user = await check_user(user)
         user_dict = checked_user
+
+        email_is_verified = await is_email_verified(user.email)
+        if not email_is_verified:
+            raise HTTPException(status_code=400, detail="Email is not verified")
+
         access_token = create_token(user_dict, token_type="access")
         refresh_token = create_token(user_dict, token_type="refresh")
 
@@ -52,7 +64,7 @@ async def login(user: UserCheck):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/refresh/")
+@router.put("/refresh")
 async def update_refresh(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     refresh_token = credentials.credentials
     refresh_token_to_change = RefreshTokenUpdate(refresh_token=refresh_token)
@@ -60,3 +72,36 @@ async def update_refresh(credentials: HTTPAuthorizationCredentials = Depends(bea
         return await update_refresh_token(refresh_token_to_change)
     except NotFoundToken as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/confirm-email") # подумать post запрос или get
+async def confirm_email(token: Annotated[str, Query(...)]):
+    try:
+        await check_verify_token(token)
+        return {"message": "Email подтвержден!"}
+    except NotFoundToken as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/receive-new-letter")
+async def receive_new_letter(email_model: EmailReceiveAgain):
+    user = await get_user(email=email_model.email)
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    await send_email(user.email, user.verification_token)
+
+    return {"message": f"Новое письмо отправлено на {user.email}"}
+
+
+# @router.delete("/delete-user")
+# async def delete_user(
+#         user_id: Annotated[int, None] = None,
+#         email: Annotated[str, None] = None,
+# ):
+#     async with session_factory() as session:
+#         if user_id:
+#             await remove_user(session=session, user_id=user_id)
+#             return {"message": "User deleted"}
+#         elif email:
+#             await remove_user(session=session, email=email)
+#             return {"message": "User deleted"}

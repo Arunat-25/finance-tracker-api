@@ -15,7 +15,7 @@ class UserOrm(Base):
     email: Mapped[str] = mapped_column(unique=True, index=True)
     hashed_password: Mapped[bytes]
     is_verified: Mapped[bool] = mapped_column(default=False)
-    verification_token: Mapped[str] = mapped_column(unique=True)
+    verification_token: Mapped[str | None] = mapped_column(unique=True, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
 
     refresh_token: Mapped[Optional["RefreshTokenOrm"]] = relationship("RefreshTokenOrm",

@@ -27,12 +27,13 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
         return user
 
     except IntegrityError:
-        raise EmailAlreadyExists("Email уже зарегистрирован")
+         raise EmailAlreadyExists("Email уже зарегистрирован") # изменить обработку, так как не только когда email
+                                                               # существует срабатывает IntegrityError
     except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка при создании пользователя"
-        )
+         raise HTTPException(
+             status_code=500,
+             detail=f"Ошибка при создании пользователя"
+         )
 
 
 async def check_user(user: UserCheck):
@@ -69,10 +70,21 @@ async def get_user(user_id: int = None, email: str = None):
 
         res = await sess.execute(stmt)
         db_user = res.scalar_one_or_none()
-        if db_user:
-            return db_user
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+    return db_user
 
 
+
+async def remove_user(session: AsyncSession, user_id: int = None, email: str = None):
+    if user_id:
+        user = await get_user(user_id=user_id)
+        await session.delete(user)
+        await session.commit()
+    elif email:
+        user = await get_user(email=email)
+        await session.delete(user)
+        await session.commit()
 
 
 

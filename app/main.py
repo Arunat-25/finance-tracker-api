@@ -7,7 +7,6 @@ from app.db.session import engine
 from app.db.base_class import Base
 from app.endpoints.auth import router as auth_router
 from app.endpoints.account import router as account_router
-from tests.session import test_engine
 
 app = FastAPI()
 
