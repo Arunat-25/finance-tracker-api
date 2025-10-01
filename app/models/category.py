@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import ForeignKey, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,6 +18,11 @@ class CategoryOrm(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
 
     user: Mapped["UserOrm"] = relationship(back_populates="categories")
+
+    transactions: Mapped[List["TransactionOrm"]] = relationship("TransactionOrm", back_populates="category")
+
+    is_deleted: Mapped[bool] = mapped_column(index=True, default=False, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(default=None)
 
     __table_args__ = (
         UniqueConstraint('user_id', 'title', name='uq_user_category_title'),

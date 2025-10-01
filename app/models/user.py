@@ -11,9 +11,9 @@ class UserOrm(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    email: Mapped[str] = mapped_column(unique=True, index=True)
-    hashed_password: Mapped[bytes]
+    name: Mapped[str] = mapped_column(nullable=False)
+    email: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
+    hashed_password: Mapped[bytes] = mapped_column(nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, index=True)
     verification_token: Mapped[str | None] = mapped_column(unique=True)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
@@ -32,3 +32,7 @@ class UserOrm(Base):
                                                            back_populates="user",
                                                            uselist=True,
                                                            cascade="all, delete")
+    transactions: Mapped[List["TransactionOrm"]] = relationship("TransactionOrm",
+                                                                back_populates="user",
+                                                                uselist=True,
+                                                                cascade="all, delete")

@@ -10,6 +10,7 @@ from app.models.user import UserOrm
 from app.models.refresh_token import RefreshTokenOrm
 from app.models.account import AccountOrm
 from app.models.category import CategoryOrm
+from app.models.transaction import TransactionOrm
 from app.db.base_class import Base
 
 
