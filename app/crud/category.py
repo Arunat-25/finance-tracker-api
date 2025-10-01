@@ -59,8 +59,6 @@ async def remove_category(user_id: int, data: CategoryDelete):
         res = await session.execute(stmt)
         category = res.scalar_one_or_none()
 
-        print(f"Категория найдена: {category is not None}")  # ← Отладочный вывод
-
         if category is None:
             raise CategoryNotFound("Такой категории у вас нет")
 

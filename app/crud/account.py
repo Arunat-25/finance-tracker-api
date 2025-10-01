@@ -1,34 +1,45 @@
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.models.account import AccountOrm
-from app.schemas.account import AccountCreate, AccountDelete, AccountGet
+from app.schemas.account import AccountCreate, AccountDelete, AccountGet, Account
 
 
 async def add_account(account: AccountCreate, user_id: int):
-    try:
-        async with session_factory() as session:
-            account_to_add = AccountOrm(
-                name=account.name,
-                balance=account.balance,
-                currency=account.currency,
-                user_id=user_id,
-            )
-            session.add(account_to_add)
-            await session.commit()
-            await session.refresh(account_to_add)
+    async with session_factory() as session:
+        if await account_is_exists(session=session, user_id=user_id, account_name=account.name):
+            raise AccountAlreadyExists("Счет с таким названием уже существует")
 
-        return {
-            "id": account_to_add.id,
-            "name": account_to_add.name,
-            "balance": account_to_add.balance,
-            "currency": account_to_add.currency,
-            "user_id": account_to_add.user_id,
-        }
-    except IntegrityError: # не только когда есть счет вызывается эта ошибка
-        raise AccountAlreadyExists("Счет с таким названием уже существует")
+        account_to_add = AccountOrm(
+            name=account.name,
+            balance=account.balance,
+            currency=account.currency,
+            user_id=user_id,
+        )
+        session.add(account_to_add)
+        await session.commit()
+        await session.refresh(account_to_add)
+
+    return {
+        "id": account_to_add.id,
+        "name": account_to_add.name,
+        "balance": account_to_add.balance,
+        "currency": account_to_add.currency,
+        "user_id": account_to_add.user_id,
+    }
+
+
+async def account_is_exists(session: AsyncSession, user_id: int, account_name: str):
+    stmt = select(AccountOrm.id).where(AccountOrm.user_id == user_id, AccountOrm.name == account_name)
+    res = await session.execute(stmt)
+    account_id = res.scalar_one_or_none()
+    if account_id is None:
+        return False
+    return True
+
 
 async def remove_account(account: AccountDelete, user_id: int):
     async with session_factory() as session:
@@ -36,7 +47,7 @@ async def remove_account(account: AccountDelete, user_id: int):
         res = await session.execute(stmt)
         await session.commit()
     if res.rowcount:
-        return {"Success": True}
+        return {"message": "Счет удален"}
     raise NotFoundAccount("Account not found")
 
 
