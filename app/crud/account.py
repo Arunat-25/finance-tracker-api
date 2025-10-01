@@ -1,10 +1,10 @@
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from app.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.models.account import AccountOrm
-from app.schemas.account import AccountCreate, AccountDelete
+from app.schemas.account import AccountCreate, AccountDelete, AccountGet
 
 
 async def add_account(account: AccountCreate, user_id: int):
@@ -27,7 +27,7 @@ async def add_account(account: AccountCreate, user_id: int):
             "currency": account_to_add.currency,
             "user_id": account_to_add.user_id,
         }
-    except IntegrityError:
+    except IntegrityError: # не только когда есть счет вызывается эта ошибка
         raise AccountAlreadyExists("Счет с таким названием уже существует")
 
 async def remove_account(account: AccountDelete, user_id: int):
@@ -38,3 +38,15 @@ async def remove_account(account: AccountDelete, user_id: int):
     if res.rowcount:
         return {"Success": True}
     raise NotFoundAccount("Account not found")
+
+
+async def get_account(account_name: str, user_id: int):
+    async with session_factory() as session:
+        stmt = select(AccountOrm).where(AccountOrm.name == account_name, AccountOrm.user_id == user_id)
+        res = await session.execute(stmt)
+        account = res.scalar_one_or_none()
+
+        if account is None:
+            raise NotFoundAccount("Account not found")
+
+    return account

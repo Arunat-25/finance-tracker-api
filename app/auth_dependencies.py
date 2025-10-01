@@ -22,3 +22,4 @@ async def get_current_user(user_id: int = Depends(get_current_user_id)):
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         return user
+

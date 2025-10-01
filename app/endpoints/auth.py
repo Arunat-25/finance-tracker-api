@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import EmailStr
 from sqlalchemy import select
 
-from app.auth import bearer_scheme
+from app.auth_dependencies import bearer_scheme
 from app.common.security import create_token, check_verify_token
 from app.common.email import conf, send_email
 from app.crud.email import is_email_verified

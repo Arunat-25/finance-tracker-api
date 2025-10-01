@@ -15,3 +15,9 @@ class NotFoundAccount(Exception):
 
 class AccountAlreadyExists(Exception):
     pass
+
+class CategoryAlreadyExists(Exception):
+    pass
+
+class CategoryNotFound(Exception):
+    pass
