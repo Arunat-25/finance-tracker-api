@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint, text
+from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint, text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -26,9 +26,8 @@ class AccountOrm(Base):
                                                                          foreign_keys="[TransactionOrm.to_account_id]")
 
     is_deleted: Mapped[bool] = mapped_column(default=False, index=True, nullable=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(default=None, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
     __table_args__ = (
-        UniqueConstraint('user_id', 'name', name='uq_account_user_name'),
         CheckConstraint('balance >= 0', name='chk_account_balance_positive'),
     )

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +35,11 @@ async def add_account(account: AccountCreate, user_id: int):
 
 
 async def account_is_exists(session: AsyncSession, user_id: int, account_name: str):
-    stmt = select(AccountOrm.id).where(AccountOrm.user_id == user_id, AccountOrm.name == account_name)
+    stmt = select(AccountOrm.id).where(
+        AccountOrm.user_id == user_id,
+                    AccountOrm.name == account_name,
+                    AccountOrm.is_deleted == False
+    )
     res = await session.execute(stmt)
     account_id = res.scalar_one_or_none()
     if account_id is None:
@@ -41,19 +47,32 @@ async def account_is_exists(session: AsyncSession, user_id: int, account_name: s
     return True
 
 
-async def remove_account(account: AccountDelete, user_id: int):
+async def remove_account(data: AccountDelete, user_id: int):
     async with session_factory() as session:
-        stmt = delete(AccountOrm).where(AccountOrm.name == account.name, AccountOrm.user_id == user_id)
+        stmt = select(AccountOrm).where(
+            AccountOrm.name == data.name,
+            AccountOrm.user_id == user_id,
+            AccountOrm.is_deleted == False
+        )
         res = await session.execute(stmt)
+        account = res.scalar_one_or_none()
+
+        if account is None:
+            raise NotFoundAccount("Account not found")
+
+        account.is_deleted = True
+        account.deleted_at = datetime.now(timezone.utc)
         await session.commit()
-    if res.rowcount:
-        return {"message": "Счет удален"}
-    raise NotFoundAccount("Account not found")
+    return {"message": "Счет удален"}
 
 
 async def get_account(account_name: str, user_id: int):
     async with session_factory() as session:
-        stmt = select(AccountOrm).where(AccountOrm.name == account_name, AccountOrm.user_id == user_id)
+        stmt = select(AccountOrm).where(
+            AccountOrm.name == account_name,
+            AccountOrm.user_id == user_id,
+            AccountOrm.is_deleted == False
+        )
         res = await session.execute(stmt)
         account = res.scalar_one_or_none()
 

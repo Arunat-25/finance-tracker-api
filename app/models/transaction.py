@@ -18,10 +18,10 @@ class TransactionOrm(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
     to_account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))
     account: Mapped["AccountOrm"] = relationship("AccountOrm",
-                                                 foreign_keys="[account_id]",
+                                                 foreign_keys=[account_id],
                                                  back_populates="outgoing_transactions")
     to_account: Mapped[Optional["AccountOrm"]] = relationship("AccountOrm",
-                                                    foreign_keys="[to_account_id]",
+                                                    foreign_keys=[to_account_id],
                                                     back_populates="incoming_transactions")
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)

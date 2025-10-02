@@ -40,9 +40,9 @@ async def login(user: UserCheck):
         checked_user = await check_user(user)
         user_dict = checked_user
 
-        email_is_verified = await is_email_verified(user.email)
-        if not email_is_verified:
-            raise HTTPException(status_code=400, detail="Email is not verified")
+        # email_is_verified = await is_email_verified(user.email)
+        # if not email_is_verified:
+        #     raise HTTPException(status_code=400, detail="Email is not verified")
 
         access_token = create_token(user_dict, token_type="access")
         refresh_token = create_token(user_dict, token_type="refresh")

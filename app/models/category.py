@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, text
+from sqlalchemy import ForeignKey, UniqueConstraint, text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -22,8 +22,5 @@ class CategoryOrm(Base):
     transactions: Mapped[List["TransactionOrm"]] = relationship("TransactionOrm", back_populates="category")
 
     is_deleted: Mapped[bool] = mapped_column(index=True, default=False, nullable=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(default=None)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
-    __table_args__ = (
-        UniqueConstraint('user_id', 'title', name='uq_user_category_title'),
-    )

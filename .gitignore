@@ -6,4 +6,4 @@ __pycache__
 .test.env
 .app/common/private.pem
 .app/common/public.pe
-задачи.txt
+задачи*.txt
