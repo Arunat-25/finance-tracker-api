@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.exc import DBAPIError
 
 from app.auth_dependencies import get_current_user, get_current_user_id
 from app.common.security import decode_token
-from app.crud.account import add_account, remove_account, get_account
+from app.crud.account import add_account, remove_account
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.schemas.account import AccountCreate, AccountDelete, AccountGet
 from app.schemas.access_token import AccessTokenCheck
@@ -15,6 +16,8 @@ async def create_account(account: AccountCreate, user_id: int = Depends(get_curr
         return await add_account(account,user_id)
     except AccountAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except DBAPIError as e:
+        raise HTTPException(status_code=400, detail="Слишком большое числ!")
 
 
 

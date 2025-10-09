@@ -12,7 +12,7 @@ from app.schemas.category import CategoryCreate, CategoryDelete
 
 async def create_category(user_id: int, data: CategoryCreate):
     async with session_factory() as session:
-        if await category_is_exists(session=session, user_id=user_id, category_title=data.title):
+        if await is_category_exist(session=session, user_id=user_id, category_title=data.title):
             raise CategoryAlreadyExists("Категория уже существует")
 
         category = CategoryOrm(title=data.title, user_id=user_id, category_type=data.category_type)
@@ -40,7 +40,7 @@ async def create_default_categories(user_id: int):
 
     async with session_factory() as session:
         for default_category in default_categories:
-            if await category_is_exists(session, default_category.user_id, default_category.title):
+            if await is_category_exist(session, default_category.user_id, default_category.title):
                 continue
             session.add(default_category)
             count += 1
@@ -49,7 +49,7 @@ async def create_default_categories(user_id: int):
     return {"message": f"Системные категории созданы, кол-во: {count}"}
 
 
-async def category_is_exists(session: AsyncSession, user_id: int, category_title: str):
+async def is_category_exist(session: AsyncSession, user_id: int, category_title: str):
     stmt = select(CategoryOrm.id).where(
         CategoryOrm.title == category_title,
         CategoryOrm.user_id == user_id,
@@ -80,3 +80,12 @@ async def remove_category(user_id: int, data: CategoryDelete):
         category.deleted_at = datetime.now(timezone.utc)
         await session.commit()
     return {"message": "Категория удалена"}
+
+
+async def category_exists(session: AsyncSession, user_id: int, category_id: int):
+    stmt = select(CategoryOrm.id).where(CategoryOrm.id == category_id, CategoryOrm.user_id == user_id)
+    res = await session.execute(stmt)
+    category_id = res.scalar_one_or_none()
+    if category_id is None:
+        return False
+    return True

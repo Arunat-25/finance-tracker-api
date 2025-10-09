@@ -21,3 +21,6 @@ class CategoryAlreadyExists(Exception):
 
 class CategoryNotFound(Exception):
     pass
+
+class NotEnoughMoney(Exception):
+    pass

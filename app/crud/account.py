@@ -66,17 +66,18 @@ async def remove_account(data: AccountDelete, user_id: int):
     return {"message": "Счет удален"}
 
 
-async def get_account(account_name: str, user_id: int):
-    async with session_factory() as session:
-        stmt = select(AccountOrm).where(
-            AccountOrm.name == account_name,
-            AccountOrm.user_id == user_id,
-            AccountOrm.is_deleted == False
-        )
-        res = await session.execute(stmt)
-        account = res.scalar_one_or_none()
+async def get_account(session: AsyncSession, account_id: int, user_id: int):
+    stmt = select(AccountOrm).where(
+        AccountOrm.id == account_id,
+        AccountOrm.user_id == user_id,
+        AccountOrm.is_deleted == False
+    ).with_for_update()
+    res = await session.execute(stmt)
+    account = res.scalar_one_or_none()
 
-        if account is None:
-            raise NotFoundAccount("Account not found")
+    if account is None:
+        raise NotFoundAccount("Account not found")
 
     return account
+
+

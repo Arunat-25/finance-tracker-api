@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional
+from decimal import Decimal
 
 from pydantic import BaseModel
 
@@ -11,8 +12,8 @@ class Account(BaseModel):
 
 class AccountCreate(Account):
     name: str
-    balance: float = 0
-    currency: Optional[CurrencyEnum] = None
+    balance: Decimal = Decimal("0.00")
+    currency: CurrencyEnum = CurrencyEnum.RUB
 
 class AccountDelete(Account):
     name: str
@@ -22,5 +23,5 @@ class AccountGet(Account):
 
 class AccountSchema(Account):
     name: str
-    balance: float
+    balance: Decimal
     currency: CurrencyEnum

@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint, text, DateTime
+from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint, text, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-
+from decimal import Decimal
 
 
 class AccountOrm(Base):
@@ -13,7 +13,7 @@ class AccountOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False, index=True) # проиндексирован, так как удаляется по name
-    balance: Mapped[float] = mapped_column(default=0.0, nullable=False)
+    balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"), nullable=False)
     currency: Mapped[str] = mapped_column(default="RUB", nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     user: Mapped["UserOrm"] = relationship(back_populates="accounts")
