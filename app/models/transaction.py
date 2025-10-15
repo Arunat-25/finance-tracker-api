@@ -15,7 +15,7 @@ class TransactionOrm(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     transaction_type: Mapped[str] = mapped_column(nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False) # вынести 12 и 2 в переменнве окружения
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False) # индекс поставить
 
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
     to_account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))

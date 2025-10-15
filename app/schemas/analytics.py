@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 
 from fastapi.openapi.models import Schema
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from app.enum.analytics import BalanceGranularityEnum
 
@@ -14,6 +15,37 @@ class AnalyticsGetOverview(Analytics):
     list_account_id: list[int]
     date_from: datetime
     date_to: datetime
+
+
+class AnalyticsOverviewPeriodResponse(Analytics):
+    date_from: datetime
+    date_to: datetime
+
+
+class AnalyticsOverviewSummaryResponse(Analytics):
+    total_income: Decimal
+    total_expense: Decimal
+    net_balance: Decimal
+    transaction_income_count: int
+    transaction_expense_count: int
+    transaction_count: int
+
+
+class CategorySummary(Analytics):
+    title: str
+    amount: Decimal
+    percentage: float
+
+
+class AnalyticsOverviewTopCategories(Analytics):
+    income: CategorySummary
+    expense: CategorySummary
+
+
+class AnalyticsOverviewResponse(Analytics):
+    period: AnalyticsOverviewPeriodResponse
+    summary: AnalyticsOverviewSummaryResponse
+    top_categories: AnalyticsOverviewTopCategories
 
 
 class AnalyticsGetExpensesByCategory(AnalyticsGetOverview):

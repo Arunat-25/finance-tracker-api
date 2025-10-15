@@ -27,7 +27,7 @@ def create_token(data: dict, token_type: str) -> str:
     if token_type == "access":
         exp = datetime.now(timezone.utc) + timedelta(minutes=2)
     elif token_type == "refresh":
-        exp = datetime.now(timezone.utc) + timedelta(minutes=20)
+        exp = datetime.now(timezone.utc) + timedelta(minutes=60)
     data['exp'] = exp
     token = jwt.encode(data, private_key, algorithm="RS256")
     return token
