@@ -10,7 +10,7 @@ from app.schemas.analytics import AnalyticsGetOverview, AnalyticsOverviewSummary
     AnalyticsOverviewTopCategories, CategorySummary, AnalyticsOverviewPeriodResponse, AnalyticsOverviewResponse
 
 
-async def get_overview(data: AnalyticsGetOverview, user_id: int):
+async def get_overview_data(data: AnalyticsGetOverview, user_id: int):
     async with session_factory() as session:
         params = {
             "user_id": user_id,
