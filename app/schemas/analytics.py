@@ -28,13 +28,15 @@ class AnalyticsOverviewSummaryResponse(Analytics):
     net_balance: Decimal
     transaction_income_count: int
     transaction_expense_count: int
+    transfer_income_count: int
+    transfer_expense_count: int
     transaction_count: int
 
 
 class CategorySummary(Analytics):
     title: str
-    amount: Decimal
     percentage: float
+    total: Decimal
 
 
 class AnalyticsOverviewTopCategories(Analytics):

@@ -6,23 +6,55 @@ from sqlalchemy import text
 from app.db.session import session_factory
 from app.models import TransactionOrm
 from app.models import CategoryOrm
-from app.schemas.analytics import AnalyticsGetOverview
+from app.schemas.analytics import AnalyticsGetOverview, AnalyticsOverviewSummaryResponse, \
+    AnalyticsOverviewTopCategories, CategorySummary, AnalyticsOverviewPeriodResponse, AnalyticsOverviewResponse
 
 
-
-async def get_overview(data: AnalyticsGetOverview, user_id: int): # создать столбец с фактическим transaction_type
+async def get_overview(data: AnalyticsGetOverview, user_id: int):
     async with session_factory() as session:
+        params = {
+            "user_id": user_id,
+            "date_from": data.date_from,
+            "date_to": data.date_to + timedelta(days=1),
+            "list_account_id": data.list_account_id
+        }
+
         with open("sql/overview_summary.sql", "r") as sql_file:
             sql_code = sql_file.read()
-        summary = await session.execute(text(sql_code), {"user_id": user_id,
-                                                         "date_from": data.date_from,
-                                                         "date_to": data.date_to + timedelta(days=1),
-                                                         "list_account_id": [72, 73, 74, 75]})
+        result_summary = await session.execute(text(sql_code), params)
+        dict_summary = result_summary.mappings().first() or {}
 
         with open("sql/overview_top_categories.sql", "r") as sql_file:
             sql_code = sql_file.read()
-        top_categories = await session.execute(text(sql_code), {"user_id": user_id,
-                                                                "date_from": data.date_from,
-                                                                "date_to": data.date_to + timedelta(days=1),
-                                                                "list_account_id": [72, 73, 74, 75]})
-        return summary.mappings().first(), top_categories.mappings().all(), {"data_from": data.date_from, "data_to": data.date_to}
+        result_top_categories = await session.execute(text(sql_code), params)
+        dict_top_categories = result_top_categories.mappings().all() or [{},{}]
+
+        summary = AnalyticsOverviewSummaryResponse(
+            total_income=dict_summary.get("total_income", 0),
+            total_expense=dict_summary.get("total_expense", 0),
+            net_balance=dict_summary.get("net_balance", 0),
+            transaction_income_count=dict_summary.get("transaction_income_count", 0),
+            transaction_expense_count=dict_summary.get("transaction_expense_count", 0),
+            transfer_income_count=dict_summary.get("transfer_income_count", 0),
+            transfer_expense_count=dict_summary.get("transfer_expense_count", 0),
+            transaction_count=dict_summary.get("transaction_count", 0)
+        )
+
+        top_categories = AnalyticsOverviewTopCategories(
+            income = CategorySummary(
+                title=dict_top_categories[0].get("title", ""),
+                percentage=50,
+                total=dict_top_categories[0].get("total", 0)
+            ),
+            expense = CategorySummary(
+                title=dict_top_categories[1].get("title", ""),
+                percentage=35,
+                total=dict_top_categories[1].get("total", 0)
+            )
+        )
+        period = AnalyticsOverviewPeriodResponse(
+            date_from=data.date_from,
+            date_to=data.date_to
+        )
+        response = AnalyticsOverviewResponse(summary=summary, top_categories=top_categories, period=period)
+        return response
