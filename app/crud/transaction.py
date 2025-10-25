@@ -85,6 +85,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
             commission=data.commission,
             rate=data.rate,
         )
+
         transfer = TransactionOrm(
             transaction_type=TransactionEnum.TRANSFER,
             amount=data.amount,
@@ -110,8 +111,8 @@ async def create_transfer(data: TransferCreate, user_id: int):
             commission=None,
         )
         session.add(income_transfer)
-        await session.commit()
 
+        await session.commit()
         await session.refresh(income_transfer)
         await session.refresh(transfer)
 

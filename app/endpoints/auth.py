@@ -49,7 +49,10 @@ async def login(user: UserCheck):
 
         # Добавление refresh token в бд
         user_for_add_token_in_db = await get_user(email=user.email)
-        refresh_token_for_add_in_db = RefreshTokenCreate(refresh_token=refresh_token, user_id=user_for_add_token_in_db.id)
+        refresh_token_for_add_in_db = RefreshTokenCreate(
+            refresh_token=refresh_token,
+            user_id=user_for_add_token_in_db.id
+        )
         await add_refresh_token(refresh_token_for_add_in_db)
 
         return {

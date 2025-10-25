@@ -5,13 +5,14 @@ from fastapi.openapi.models import Schema
 from pydantic import BaseModel, computed_field
 
 from app.enum.analytics import BalanceGranularityEnum
+from app.enum.currency import CurrencyEnum
 
 
 class Analytics(BaseModel):
     pass
 
 
-class AnalyticsGetOverview(Analytics):
+class AnalyticsOverviewRequest(Analytics):
     list_account_id: list[int]
     date_from: datetime
     date_to: datetime
@@ -39,8 +40,7 @@ class CategorySummary(Analytics):
     percentage: float
 
 
-
-class AnalyticsOverviewTopCategories(Analytics):
+class AnalyticsOverviewTopCategoriesResponse(Analytics):
     income: CategorySummary
     expense: CategorySummary
 
@@ -48,18 +48,27 @@ class AnalyticsOverviewTopCategories(Analytics):
 class AnalyticsOverviewResponse(Analytics):
     period: AnalyticsOverviewPeriodResponse
     summary: AnalyticsOverviewSummaryResponse
-    top_categories: AnalyticsOverviewTopCategories
+    top_categories: AnalyticsOverviewTopCategoriesResponse
 
 
-class AnalyticsGetExpensesByCategory(AnalyticsGetOverview):
-    pass
+class AnalyticsExpensesByCategoryRequest(AnalyticsOverviewRequest):
+    currency: CurrencyEnum # потом перенести в AnalyticsOverviewRequest
 
 
-class AnalyticsGetIncomesByCategory(AnalyticsGetOverview):
-    pass
+class AnalyticsExpensesByCategoryResponse(Analytics):
+    period: AnalyticsOverviewPeriodResponse
+    categories: list[CategorySummary]
 
 
-class AnalyticsGetBalanceTrend(AnalyticsGetOverview):
+class AnalyticsIncomesByCategoryRequest(AnalyticsOverviewRequest):
+    currency: CurrencyEnum # потом перенести в AnalyticsOverviewRequest
+
+class AnalyticsIncomesByCategoryResponse(Analytics):
+    period: AnalyticsOverviewPeriodResponse
+    categories: list[CategorySummary]
+
+
+class AnalyticsBalanceTrendRequest(AnalyticsOverviewRequest):
     granularity: BalanceGranularityEnum
 
 
