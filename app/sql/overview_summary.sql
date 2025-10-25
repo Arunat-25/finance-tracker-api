@@ -7,12 +7,20 @@ WITH transactions_summary AS (
 		COUNT(CASE WHEN transaction_type = 'transfer' AND to_account_id is NULL THEN 1 END) as transfer_income_count,
 		COUNT(CASE WHEN transaction_type = 'transfer' AND to_account_id is NOT NULL THEN 1 END) as transfer_expense_count
     FROM (
-        SELECT *
-        FROM transactions
-        WHERE user_id = :user_id
+        SELECT
+            t.transaction_type,
+            t.amount,
+            t.user_id,
+            t.account_id,
+            a.currency,
+            t.to_account_id
+        FROM transactions AS t
+        JOIN accounts AS a
+ON t.account_id = a.id
+        WHERE t.user_id = :user_id
             AND date >= :date_from
             AND date < :date_to
-            AND account_id = ANY(:list_account_id)
+            AND t.account_id = ANY(:list_account_id)
          ) as transactions
     GROUP BY user_id, transaction_type
 )

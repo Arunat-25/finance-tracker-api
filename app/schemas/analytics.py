@@ -14,6 +14,7 @@ class Analytics(BaseModel):
 
 class AnalyticsOverviewRequest(Analytics):
     list_account_id: list[int]
+    currency: CurrencyEnum
     date_from: datetime
     date_to: datetime
 
@@ -52,16 +53,17 @@ class AnalyticsOverviewResponse(Analytics):
 
 
 class AnalyticsExpensesByCategoryRequest(AnalyticsOverviewRequest):
-    currency: CurrencyEnum # потом перенести в AnalyticsOverviewRequest
+    pass
 
 
 class AnalyticsExpensesByCategoryResponse(Analytics):
     period: AnalyticsOverviewPeriodResponse
     categories: list[CategorySummary]
+    currency: CurrencyEnum
 
 
 class AnalyticsIncomesByCategoryRequest(AnalyticsOverviewRequest):
-    currency: CurrencyEnum # потом перенести в AnalyticsOverviewRequest
+    pass
 
 class AnalyticsIncomesByCategoryResponse(Analytics):
     period: AnalyticsOverviewPeriodResponse

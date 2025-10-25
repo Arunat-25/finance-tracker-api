@@ -114,5 +114,9 @@ async def get_top_by_category_data(
             date_from=data.date_from,
             date_to=data.date_to
         )
-        response = AnalyticsExpensesByCategoryResponse(period=period,categories=categories)
+        response = AnalyticsExpensesByCategoryResponse(
+            period=period,
+            categories=categories,
+            currency=data.currency.value
+        )
         return response
