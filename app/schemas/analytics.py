@@ -35,8 +35,9 @@ class AnalyticsOverviewSummaryResponse(Analytics):
 
 class CategorySummary(Analytics):
     title: str
-    percentage: float
     total: Decimal
+    percentage: float
+
 
 
 class AnalyticsOverviewTopCategories(Analytics):

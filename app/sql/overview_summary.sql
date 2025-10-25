@@ -9,7 +9,10 @@ WITH transactions_summary AS (
     FROM (
         SELECT *
         FROM transactions
-        WHERE user_id = :user_id AND date >= :date_from AND date < :date_to AND account_id = ANY(:list_account_id)
+        WHERE user_id = :user_id
+            AND date >= :date_from
+            AND date < :date_to
+            AND account_id = ANY(:list_account_id)
          ) as transactions
     GROUP BY user_id, transaction_type
 )

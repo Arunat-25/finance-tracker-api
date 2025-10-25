@@ -18,6 +18,7 @@ WITH cat_with_total AS
 		    AND tran.date >= :date_from
 		    AND tran.date < :date_to
 		    AND account_id = ANY(:list_account_id)
+		    AND tran.user_id = :user_id
 		) AS cat_tran
 		-- сделать так, чтобы категорию перевод нельзя было удалить.
 	GROUP BY

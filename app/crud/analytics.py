@@ -42,14 +42,14 @@ async def get_overview_data(data: AnalyticsGetOverview, user_id: int):
 
         top_categories = AnalyticsOverviewTopCategories(
             income = CategorySummary(
-                title=dict_top_categories[0].get("title", ""),
-                percentage=50,
-                total=dict_top_categories[0].get("total", 0)
+                title=dict_top_categories[1].get("title", ""),
+                total=dict_top_categories[1].get("total", 0),
+                percentage=round(dict_top_categories[1].get("total", 0)*100/summary.total_income, 2)
             ),
             expense = CategorySummary(
-                title=dict_top_categories[1].get("title", ""),
-                percentage=35,
-                total=dict_top_categories[1].get("total", 0)
+                title=dict_top_categories[0].get("title", ""),
+                total=dict_top_categories[0].get("total", 0),
+                percentage=round(dict_top_categories[0].get("total", 0)*100/summary.total_expense, 2)
             )
         )
         period = AnalyticsOverviewPeriodResponse(
