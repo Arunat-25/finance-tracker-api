@@ -13,7 +13,8 @@ from app.models import TransactionOrm
 from app.models import CategoryOrm
 from app.schemas.analytics import AnalyticsOverviewRequest, AnalyticsOverviewSummaryResponse, \
     AnalyticsOverviewTopCategoriesResponse, CategorySummary, AnalyticsOverviewPeriodResponse, AnalyticsOverviewResponse, \
-    AnalyticsExpensesByCategoryRequest, AnalyticsExpensesByCategoryResponse, AnalyticsIncomesByCategoryRequest
+    AnalyticsExpensesByCategoryRequest, AnalyticsExpensesByCategoryResponse, AnalyticsIncomesByCategoryRequest, \
+    AnalyticsBalanceTrendRequest
 from app.sql.get_sql_code_from_file import get_sql_code
 
 
@@ -181,3 +182,29 @@ async def get_top_by_category_data(
             currency=data.currency.value
         )
         return response
+
+
+async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: int, user_timezone: str):
+    async with session_factory() as session:
+        params = {
+            "user_id": user_id,
+            "list_account_id": data.list_account_id,
+            "date_from": data.date_from,
+            "date_to": data.date_to + timedelta(days=1)
+        }
+        sql_code = await get_sql_code("sql/balance_trend.sql")
+        res = await session.execute(text(sql_code), params)
+        transactions_RawMapping = res.mappings().all()
+        transactions = [dict(transaction) for transaction in transactions_RawMapping]
+
+        rates = await get_rates(base_currency=data.currency.value)
+        for transaction in transactions:
+            rate = Decimal(rates[transaction["currency"]])
+            transaction["amount"] = transaction["amount"] / rate
+
+        if (data.date_to - data.date_from) == timedelta(days=1):
+            for transaction in transactions:
+                pass
+
+
+        return transactions
