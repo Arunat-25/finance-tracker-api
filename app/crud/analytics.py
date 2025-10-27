@@ -2,6 +2,7 @@ import asyncio, aiofiles
 
 from datetime import timedelta
 from decimal import Decimal
+from typing import Literal
 
 from sqlalchemy import text
 
@@ -25,39 +26,94 @@ async def get_overview_data(data: AnalyticsOverviewRequest, user_id: int):
             "list_account_id": data.list_account_id
         }
 
+        rates = await get_rates(base_currency=data.currency.value)
+
         sql_code_summary = await get_sql_code("sql/overview_summary.sql")
         result_summary = await session.execute(text(sql_code_summary), params)
-        dict_summary = result_summary.mappings().first() or {}
+        filtered_transactions = result_summary.mappings().all()
+
+        total_income = Decimal(0.00)
+        total_expense = Decimal(0.00)
+        total_transfer_income = Decimal(0.00)
+        total_transfer_expense = Decimal(0.00)
+        transaction_income_count = 0
+        transaction_expense_count = 0
+        transfer_income_count = 0
+        transfer_expense_count = 0
+        transaction_count = len(filtered_transactions)
+        if transaction_count > 0:
+            for transaction in filtered_transactions:
+                rate = Decimal(rates[transaction["currency"]])
+                converted_amount = round(transaction["amount"]/rate, 2)
+                if transaction["transaction_type"] == "income":
+                    total_income += converted_amount
+                    transaction_income_count += 1
+                elif transaction["transaction_type"] == "expense":
+                    total_expense += converted_amount
+                    transaction_expense_count += 1
+                else: # если transfer
+                    if transaction["to_account_id"] is None: # если income transfer
+                        transfer_income_count += 1
+                        total_transfer_income += converted_amount
+                    else: # если expense transfer
+                        transfer_expense_count += 1
+                        total_transfer_expense += converted_amount
+
+        summary = AnalyticsOverviewSummaryResponse(
+            total_income=total_income,
+            total_expense=total_expense,
+            net_balance=total_income - total_expense,
+            transaction_income_count=transaction_income_count,
+            transaction_expense_count=transaction_expense_count,
+            transfer_income_count=transfer_income_count,
+            transfer_expense_count=transfer_expense_count,
+            transaction_count=transaction_count,
+        )
 
         sql_code_top_categories = await get_sql_code("sql/overview_top_categories.sql")
         result_top_categories = await session.execute(text(sql_code_top_categories), params)
-        dict_top_categories = result_top_categories.mappings().all() or [{},{}]
+        list_RowMapping_categories = result_top_categories.mappings().all()
+        list_dict_categories = [dict(category) for category in list_RowMapping_categories]
 
-        summary = AnalyticsOverviewSummaryResponse(
-            total_income=dict_summary.get("total_income", 0),
-            total_expense=dict_summary.get("total_expense", 0),
-            net_balance=dict_summary.get("net_balance", 0),
-            transaction_income_count=dict_summary.get("transaction_income_count", 0),
-            transaction_expense_count=dict_summary.get("transaction_expense_count", 0),
-            transfer_income_count=dict_summary.get("transfer_income_count", 0),
-            transfer_expense_count=dict_summary.get("transfer_expense_count", 0),
-            transaction_count=dict_summary.get("transaction_count", 0)
-        )
+        for category in list_dict_categories:
+            rate = Decimal(rates[category["currency"]])
+            category["converted_amount"] = category["amount"] / rate
 
-        top_income_category_total = dict_top_categories[1].get("total", 0)
-        top_expense_category_total = dict_top_categories[0].get("total", 0)
+        aggregated_categories = {}
+        for category in list_dict_categories:
+            key = (category["title"], category["category_type"])
+            if key in aggregated_categories:
+                aggregated_categories[key]["converted_amount"] += category["converted_amount"]
+            else:
+                aggregated_categories[key] = {
+                    "title": category["title"],
+                    "category_type": category["category_type"],
+                    "converted_amount": category["converted_amount"]
+                }
+
+        top_income_category = {"converted_amount": Decimal(0), "title": ""}
+        top_expense_category = {"converted_amount": Decimal(0), "title": ""}
+
+        for category in aggregated_categories.values():
+            if (category["category_type"] == "income"
+                    and category["converted_amount"] > top_income_category["converted_amount"]):
+                top_income_category = category
+            elif (category["category_type"] == "expense"
+                  and category["converted_amount"] > top_expense_category["converted_amount"]):
+                top_expense_category = category
+
         top_categories = AnalyticsOverviewTopCategoriesResponse(
             income = CategorySummary(
-                title=dict_top_categories[1].get("title", ""),
-                total=dict_top_categories[1].get("total", 0),
-                percentage=round(top_income_category_total*100/summary.total_income, 2) if summary.total_income > 0
-                else 0
+                title=top_income_category["title"],
+                total=round(top_income_category["converted_amount"], 2),
+                percentage=round(top_income_category["converted_amount"]*100/summary.total_income, 2)
+                if summary.total_income > 0 else 0
             ),
             expense = CategorySummary(
-                title=dict_top_categories[0].get("title", ""),
-                total=dict_top_categories[0].get("total", 0),
-                percentage=round(top_expense_category_total*100/summary.total_expense, 2) if summary.total_income > 0
-                else 0
+                title=top_expense_category["title"],
+                total=round(top_expense_category["converted_amount"], 2),
+                percentage=round(top_expense_category["converted_amount"]*100/summary.total_expense, 2)
+                if summary.total_income > 0 else 0
             )
         )
 
@@ -66,14 +122,19 @@ async def get_overview_data(data: AnalyticsOverviewRequest, user_id: int):
             date_to=data.date_to
         )
 
-        response = AnalyticsOverviewResponse(summary=summary, top_categories=top_categories, period=period)
+        response = AnalyticsOverviewResponse(
+            summary=summary,
+            top_categories=top_categories,
+            period=period,
+            currency=data.currency.value
+        )
         return response
 
 
 async def get_top_by_category_data(
         data: AnalyticsExpensesByCategoryRequest | AnalyticsIncomesByCategoryRequest,
         user_id: int,
-        transactions_type: str # попробовать енум
+        transactions_type: Literal["income", "expense"]
 ):
     async with session_factory() as session:
         params = {

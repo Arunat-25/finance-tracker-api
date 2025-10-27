@@ -50,6 +50,7 @@ class AnalyticsOverviewResponse(Analytics):
     period: AnalyticsOverviewPeriodResponse
     summary: AnalyticsOverviewSummaryResponse
     top_categories: AnalyticsOverviewTopCategoriesResponse
+    currency: CurrencyEnum
 
 
 class AnalyticsExpensesByCategoryRequest(AnalyticsOverviewRequest):

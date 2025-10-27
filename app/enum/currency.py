@@ -6,7 +6,6 @@ class CurrencyEnum(str, Enum):
     INR = 'INR' # Индийская рупия
     IRR = 'IRR' # Иранский риал
     BRL = 'BRL' # Бразильский реал
-    UZC = 'UZC' # Узбекский сум
     TRY = 'TRY' # Турецкая лира
     BYN = 'BYN' # Белорусский рубль
     KZT = 'KZT' # Тенге
