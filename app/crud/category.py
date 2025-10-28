@@ -34,6 +34,8 @@ async def create_default_categories(user_id: int):
         CategoryOrm(title="Продукты", category_type=CategoryEnum.EXPENSE, user_id=user_id),
         CategoryOrm(title="Жилье", category_type=CategoryEnum.EXPENSE, user_id=user_id),
         CategoryOrm(title="Транспорт", category_type=CategoryEnum.EXPENSE, user_id=user_id),
+
+        CategoryOrm(title="Перевод", category_type=CategoryEnum.TRANSFER, user_id=user_id),
     ]
 
     count = 0

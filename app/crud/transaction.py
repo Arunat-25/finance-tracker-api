@@ -20,6 +20,9 @@ async def create_expense(data: TransactionExpenseCreate, user_id: int):
         if not category_exists(session=session, user_id=user_id, category_id=data.category_id):
             raise CategoryNotFound
 
+        account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
+        account.balance = account.balance - data.amount
+
         transaction = TransactionOrm(
             transaction_type=TransactionEnum.EXPENSE,
             amount=data.amount,
@@ -29,12 +32,10 @@ async def create_expense(data: TransactionExpenseCreate, user_id: int):
             rate=None,
             commission=None,
             category_id=data.category_id,
-            user_id=user_id
+            user_id=user_id,
+            balance_after=account.balance,
         )
         session.add(transaction)
-
-        account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
-        account.balance = account.balance - data.amount
 
         await session.commit()
         await session.refresh(account)
@@ -48,6 +49,9 @@ async def create_income(data: TransactionIncomeCreate, user_id: int):
         if not await category_exists(session=session, user_id=user_id, category_id=data.category_id):
             raise CategoryNotFound
 
+        account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
+        account.balance = account.balance + data.amount
+
         transaction = TransactionOrm(
             transaction_type=TransactionEnum.INCOME,
             amount=data.amount,
@@ -57,12 +61,10 @@ async def create_income(data: TransactionIncomeCreate, user_id: int):
             rate=None,
             commission=None,
             category_id=data.category_id,
-            user_id=user_id
+            user_id=user_id,
+            balance_after=account.balance,
         )
         session.add(transaction)
-
-        account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
-        account.balance = account.balance + data.amount
 
         await session.commit()
         await session.refresh(transaction)
@@ -76,7 +78,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
         if not await category_exists(session=session, user_id=user_id, category_id=data.category_id):
             raise CategoryNotFound
 
-        await withdraw_and_deposit_money(
+        account, to_account = await withdraw_and_deposit_money(
             session=session,
             account_id=data.account_id,
             to_account_id=data.to_account_id,
@@ -96,6 +98,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
             user_id=user_id,
             rate=data.rate,
             commission=data.commission,
+            balance_after=account.balance,
         )
         session.add(transfer)
 
@@ -109,6 +112,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
             user_id=user_id,
             rate=None,
             commission=None,
+            balance_after=to_account.balance,
         )
         session.add(income_transfer)
 

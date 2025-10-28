@@ -184,13 +184,13 @@ async def get_top_by_category_data(
         return response
 
 
-async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: int, user_timezone: str):
+async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: int, user_utc_offset: int):
     async with session_factory() as session:
         params = {
             "user_id": user_id,
             "list_account_id": data.list_account_id,
-            "date_from": data.date_from,
-            "date_to": data.date_to + timedelta(days=1)
+            "date_from": data.date_from, #- timedelta(days=user_utc_offset),
+            "date_to": data.date_to #+ timedelta(days=1) - timedelta(days=user_utc_offset),
         }
         sql_code = await get_sql_code("sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
@@ -198,13 +198,25 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
         rates = await get_rates(base_currency=data.currency.value)
-        for transaction in transactions:
+        for transaction in transactions: # в один for снизу
             rate = Decimal(rates[transaction["currency"]])
-            transaction["amount"] = transaction["amount"] / rate
+            transaction["balance_before"] = transaction["balance_before"] / rate
+            transaction["balance_after"] = transaction["balance_after"] / rate
 
+        balance_by_hour = {}
         if (data.date_to - data.date_from) == timedelta(days=1):
-            for transaction in transactions:
-                pass
+            for hour in range(24):
+                outstanding_accounts = data.list_account_id
 
+                for transaction in transactions: # удалять те по которым прошел
+                    transaction_hour = int(transaction["date"].time().hour)
+                    if not outstanding_accounts or transaction_hour > hour:
+                        break
 
-        return transactions
+                    account_id = transaction["account_id"]
+                    if account_id in balance_by_hour:
+                        balance_by_hour[account_id][hour] = transaction["balance_after"]
+                    else:
+                        balance_by_hour[account_id] = {hour: transaction["balance_after"]}
+
+        return balance_by_hour

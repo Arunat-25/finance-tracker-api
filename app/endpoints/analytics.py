@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from fastapi.params import Query, Depends
 
-from app.auth_dependencies import get_current_user_id
+from app.auth_dependencies import get_current_user_id, get_current_user_utc_offset
 from app.crud.analytics import get_overview_data, get_top_by_category_data, get_balance_trend_data
 from app.schemas.analytics import AnalyticsOverviewRequest, AnalyticsExpensesByCategoryRequest, AnalyticsIncomesByCategoryRequest, \
     AnalyticsBalanceTrendRequest, AnalyticsPeriodsComparison, AnalyticsOverviewResponse
@@ -28,8 +28,12 @@ async def get_incomes_by_category(data: AnalyticsIncomesByCategoryRequest, user_
 
 
 @router.post("/balance_trend")
-async def get_balance_trend(data: AnalyticsBalanceTrendRequest, user_id: int = Depends(get_current_user_id)):
-    return await get_balance_trend_data(data=data, user_id=user_id, user_timezone="Asia/Novosibirsk")
+async def get_balance_trend(
+        data: AnalyticsBalanceTrendRequest,
+        user_id: int = Depends(get_current_user_id),
+        user_utc_offset: int = Depends(get_current_user_utc_offset)
+):
+    return await get_balance_trend_data(data=data, user_id=user_id, user_utc_offset=user_utc_offset)
 
 
 @router.post("/compare-periods")

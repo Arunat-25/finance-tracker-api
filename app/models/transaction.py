@@ -14,8 +14,8 @@ class TransactionOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     transaction_type: Mapped[str] = mapped_column(nullable=False)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False) # вынести 12 и 2 в переменнве окружения
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False) # индекс поставить
+    amount: Mapped[Decimal] = mapped_column(Numeric(25, 2), nullable=False) # вынести 12 и 2 в переменнве окружения
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False) # индекс поставить
 
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
     to_account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))
@@ -25,8 +25,9 @@ class TransactionOrm(Base):
     to_account: Mapped[Optional["AccountOrm"]] = relationship("AccountOrm",
                                                     foreign_keys=[to_account_id],
                                                     back_populates="incoming_transactions")
-    rate: Mapped[Decimal | None] = mapped_column(Numeric(12, 4), default=None)
-    commission: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=None)
+    rate: Mapped[Decimal | None] = mapped_column(Numeric(25, 2), default=None)
+    commission: Mapped[Decimal | None] = mapped_column(Numeric(25, 2), default=None)
+    balance_after: Mapped[Decimal] = mapped_column(Numeric(25, 2), nullable=False)
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
     category: Mapped["CategoryOrm"] = relationship("CategoryOrm", back_populates="transactions")

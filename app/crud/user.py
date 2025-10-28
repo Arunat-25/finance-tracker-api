@@ -18,6 +18,7 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
             name=new_user.name,
             email=new_user.email,
             hashed_password=hashed_password,
+            utc_offset=new_user.utc_offset,
             is_verified=False,
             verification_token=create_verify_token(),
         )
@@ -48,6 +49,7 @@ async def check_user(user: UserCheck):
                         "user_id": db_user.id,
                         "name": db_user.name,
                         "email": db_user.email,
+                        "utc_offset": db_user.utc_offset,
                     }
                 raise PasswordIsIncorrect("Неправильный пароль")
             raise NotRegistered("Пользователь не зарегистрирован")
