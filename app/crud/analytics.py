@@ -186,13 +186,13 @@ async def get_top_by_category_data(
         return response
 
 
-async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: int, user_utc_offset: int):
-    async with session_factory() as session:
+async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: int, user_utc_offset: int = 0):
+    async with (session_factory() as session):
         params = {
             "user_id": user_id,
             "list_account_id": data.list_account_id,
-            "date_from": data.date_from.replace(tzinfo=None), #- timedelta(days=user_utc_offset),
-            "date_to": data.date_to.replace(tzinfo=None) + timedelta(days=1) #- timedelta(days=user_utc_offset),
+            "date_from": data.date_from.replace(tzinfo=None) - timedelta(hours=user_utc_offset),
+            "date_to": data.date_to.replace(tzinfo=None) + timedelta(days=1) - timedelta(hours=user_utc_offset),
         }
         sql_code = await get_sql_code("sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
@@ -200,55 +200,103 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
         rates = await get_rates(base_currency=data.currency.value)
-        for transaction in transactions: # в один for снизу
-            rate = Decimal(rates[transaction["currency"]])
-            transaction["balance_before"] = transaction["balance_before"] / rate
-            transaction["balance_after"] = transaction["balance_after"] / rate
+        transactions = await convert_transactions_columns_to_currency(
+            transactions=transactions,
+            columns_to_convert=["balance_before", "balance_after"],
+            rates=rates,
+            currency_key="currency"
+        )
 
-        balance_by_hour = {}
-        if (data.date_to - data.date_from) == timedelta(days=1):
-            for hour in range(24):
-                outstanding_accounts = data.list_account_id
-
-                for transaction in transactions: # удалять те по которым прошел
-                    transaction_hour = int(transaction["date"].time().hour)
-                    if not outstanding_accounts or transaction_hour > hour:
-                        break
-
-                    account_id = transaction["account_id"]
-                    if account_id in balance_by_hour:
-                        balance_by_hour[account_id][hour] = transaction["balance_after"]
-                    else:
-                        balance_by_hour[account_id] = {hour: transaction["balance_after"]}
-
-                    if hour == 23 and len(balance_by_hour) < len(data.list_account_id): # нужна проверка принадлежит ли счет пользователю
-                        accounts_with_not_found_balance = list(filter(lambda x: x not in balance_by_hour.keys(), data.list_account_id))
-                        params = {
-                            "user_id": user_id,
-                            "list_account_id": accounts_with_not_found_balance,
-                            "date_from": data.date_to.replace(tzinfo=None),
-                            "date_to": datetime.utcnow() + timedelta(days=1) #- timedelta(days=user_utc_offset),
-                        }
-                        balance_not_in_period_by_hour = await get_balances_of_accounts_wich_not_in_period(session=session, params=params, rates=rates)
-
-                        summary_balance_by_hour = {**balance_by_hour, **balance_not_in_period_by_hour}
-                        return summary_balance_by_hour
+        period = data.date_to - data.date_from
+        #if period == timedelta(days=1):
+        return await get_balance_trend_for_day(
+                session=session,
+                data=data,
+                transactions=transactions,
+                user_id=user_id,
+                rates=rates,
+                user_utc_offset=user_utc_offset
+            )
 
 
-        return balance_by_hour
-
-
-async def get_balances_of_accounts_wich_not_in_period(session: AsyncSession, params: dict, rates: dict):
+async def get_balance_trend_for_day(
+        session:AsyncSession,
+        data: AnalyticsBalanceTrendRequest,
+        transactions: list,
+        user_id: int,
+        rates: dict,
+        user_utc_offset: int,
+):
     balance_by_hour = {}
+    for hour in range(24):
+        outstanding_accounts = data.list_account_id.copy()
+        if not outstanding_accounts:
+            break
+
+        for transaction in transactions:  # удалять те по которым прошел
+            transaction_hour = int(transaction["date"].time().hour)
+            if transaction_hour > hour:
+                break
+
+            account_id = transaction["account_id"]
+            if account_id in balance_by_hour:
+                balance_by_hour[account_id][hour] = transaction["balance_after"]
+                if account_id in outstanding_accounts:
+                    outstanding_accounts.remove(account_id)
+            else:
+                balance_by_hour[account_id] = {hour: transaction["balance_after"]}
+                if account_id in outstanding_accounts:
+                    outstanding_accounts.remove(account_id)
+
+            if outstanding_accounts:
+                for outstanding_account in outstanding_accounts:
+                    if outstanding_account in balance_by_hour.keys():
+                        balance_by_hour[outstanding_account][hour] = balance_by_hour[outstanding_account][hour-1]
+                        if account_id in outstanding_accounts:
+                            outstanding_accounts.remove(account_id)
+
+            count_accounts_with_found_balance = len(balance_by_hour)
+            if hour == 23:
+                print(count_accounts_with_found_balance, len(data.list_account_id))
+            if hour == 23 and count_accounts_with_found_balance < len(data.list_account_id):
+                accounts_with_found_balance = balance_by_hour.keys()
+                accounts_with_not_found_balance = list(
+                    filter(
+                        lambda x: x not in accounts_with_found_balance,
+                        data.list_account_id
+                    )
+                )
+                params = {
+                    "user_id": user_id,
+                    "list_account_id": accounts_with_not_found_balance,
+                    "date_from": data.date_to.replace(tzinfo=None),
+                    "date_to": datetime.utcnow() + timedelta(days=1) - timedelta(hours=user_utc_offset),
+                }
+                balance_by_hour_not_in_period = await get_balances_of_accounts_wiche_not_in_period(
+                    session=session,
+                    params=params,
+                    rates=rates
+                )
+
+                summary_balance_by_hour = {**balance_by_hour, **balance_by_hour_not_in_period}
+                return summary_balance_by_hour
+    return balance_by_hour
+
+
+async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, params: dict, rates: dict):
     sql_code = await get_sql_code("sql/get_first_transaction_from_date.sql")
     res = await session.execute(text(sql_code), params)
     transactions_RawMapping = res.mappings().all()
     transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
-    for transaction in transactions:  # в один for снизу
-        rate = Decimal(rates[transaction["currency"]])
-        transaction["balance_before"] = round(transaction["balance_before"] / rate, 2)
+    transactions = await convert_transactions_columns_to_currency(
+        transactions=transactions,
+        currency_key="currency",
+        columns_to_convert=["balance_before"],
+        rates=rates
+    )
 
+    balance_by_hour = {}
     for transaction in transactions:
         balance_by_hour[transaction["account_id"]] = {}
         for hour in range(24):
@@ -262,9 +310,26 @@ async def get_balances_of_accounts_wich_not_in_period(session: AsyncSession, par
                 accounts_for_get_balance.append(account_id)
 
     if accounts_for_get_balance: # перевод к валюте
-        orm_accounts = await get_accounts(session=session, account_ids=accounts_for_get_balance, user_id=params["user_id"])
+        orm_accounts = await get_accounts(
+            session=session,
+            account_ids=accounts_for_get_balance,
+            user_id=params["user_id"]
+        )
         for orm_account in orm_accounts:
             balance_by_hour[orm_account.id] = {}
             for hour in range(24):
                 balance_by_hour[orm_account.id][hour] = orm_account.balance
     return balance_by_hour
+
+
+async def convert_transactions_columns_to_currency(
+        transactions: list[dict],
+        columns_to_convert: list[str],
+        rates: dict,
+        currency_key: str
+) -> list:
+    for transaction in transactions:
+        rate = Decimal(rates[transaction[currency_key]])
+        for column_to_convert in columns_to_convert:
+            transaction[column_to_convert] = round(transaction[column_to_convert] / rate, 2)
+    return transactions
