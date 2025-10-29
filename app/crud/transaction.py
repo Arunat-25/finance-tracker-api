@@ -26,7 +26,7 @@ async def create_expense(data: TransactionExpenseCreate, user_id: int):
         transaction = TransactionOrm(
             transaction_type=TransactionEnum.EXPENSE,
             amount=data.amount,
-            date=datetime.now(timezone.utc),
+            date=datetime.utcnow(),
             account_id=data.account_id,
             to_account_id=None,
             rate=None,

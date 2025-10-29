@@ -81,3 +81,13 @@ async def get_account(session: AsyncSession, account_id: int, user_id: int):
     return account
 
 
+async def get_accounts(session: AsyncSession, user_id: int, account_ids: list[int]):
+    stmt = select(AccountOrm).where(
+        AccountOrm.user_id == user_id,
+        AccountOrm.is_deleted == False,
+        AccountOrm.id.in_(account_ids)
+    )
+    res = await session.execute(stmt)
+    accounts = res.scalars().all()
+
+    return accounts

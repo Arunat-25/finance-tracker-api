@@ -1,12 +1,14 @@
 import asyncio, aiofiles
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 from typing import Literal
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.enum.currency
+from app.crud.account import get_accounts
 from app.currency import get_rates
 from app.db.session import session_factory
 from app.models import TransactionOrm
@@ -189,8 +191,8 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         params = {
             "user_id": user_id,
             "list_account_id": data.list_account_id,
-            "date_from": data.date_from, #- timedelta(days=user_utc_offset),
-            "date_to": data.date_to #+ timedelta(days=1) - timedelta(days=user_utc_offset),
+            "date_from": data.date_from.replace(tzinfo=None), #- timedelta(days=user_utc_offset),
+            "date_to": data.date_to.replace(tzinfo=None) + timedelta(days=1) #- timedelta(days=user_utc_offset),
         }
         sql_code = await get_sql_code("sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
@@ -219,4 +221,50 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
                     else:
                         balance_by_hour[account_id] = {hour: transaction["balance_after"]}
 
+                    if hour == 23 and len(balance_by_hour) < len(data.list_account_id): # нужна проверка принадлежит ли счет пользователю
+                        accounts_with_not_found_balance = list(filter(lambda x: x not in balance_by_hour.keys(), data.list_account_id))
+                        params = {
+                            "user_id": user_id,
+                            "list_account_id": accounts_with_not_found_balance,
+                            "date_from": data.date_to.replace(tzinfo=None),
+                            "date_to": datetime.utcnow() + timedelta(days=1) #- timedelta(days=user_utc_offset),
+                        }
+                        balance_not_in_period_by_hour = await get_balances_of_accounts_wich_not_in_period(session=session, params=params, rates=rates)
+
+                        summary_balance_by_hour = {**balance_by_hour, **balance_not_in_period_by_hour}
+                        return summary_balance_by_hour
+
+
         return balance_by_hour
+
+
+async def get_balances_of_accounts_wich_not_in_period(session: AsyncSession, params: dict, rates: dict):
+    balance_by_hour = {}
+    sql_code = await get_sql_code("sql/get_first_transaction_from_date.sql")
+    res = await session.execute(text(sql_code), params)
+    transactions_RawMapping = res.mappings().all()
+    transactions = [dict(transaction) for transaction in transactions_RawMapping]
+
+    for transaction in transactions:  # в один for снизу
+        rate = Decimal(rates[transaction["currency"]])
+        transaction["balance_before"] = round(transaction["balance_before"] / rate, 2)
+
+    for transaction in transactions:
+        balance_by_hour[transaction["account_id"]] = {}
+        for hour in range(24):
+            balance_by_hour[transaction["account_id"]][hour] = transaction["balance_before"]
+
+    accounts_for_get_balance = []
+    accounts = params["list_account_id"]
+    if len(balance_by_hour) < len(accounts):
+        for account_id in accounts:
+            if account_id not in balance_by_hour:
+                accounts_for_get_balance.append(account_id)
+
+    if accounts_for_get_balance: # перевод к валюте
+        orm_accounts = await get_accounts(session=session, account_ids=accounts_for_get_balance, user_id=params["user_id"])
+        for orm_account in orm_accounts:
+            balance_by_hour[orm_account.id] = {}
+            for hour in range(24):
+                balance_by_hour[orm_account.id][hour] = orm_account.balance
+    return balance_by_hour
