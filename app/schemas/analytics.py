@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi.openapi.models import Schema
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, field_validator, model_validator
 
 from app.enum.analytics import BalanceGranularityEnum
 from app.enum.currency import CurrencyEnum
@@ -17,6 +17,11 @@ class AnalyticsOverviewRequest(Analytics):
     currency: CurrencyEnum
     date_from: datetime
     date_to: datetime
+
+    @field_validator('date_to')
+    def check_date_to(cls, value):
+        if value > datetime.now(timezone.utc):
+            raise ValueError('date_to cannot be greater than now')
 
 
 class AnalyticsOverviewPeriodResponse(Analytics):
@@ -66,13 +71,21 @@ class AnalyticsExpensesByCategoryResponse(Analytics):
 class AnalyticsIncomesByCategoryRequest(AnalyticsOverviewRequest):
     pass
 
+
 class AnalyticsIncomesByCategoryResponse(Analytics):
     period: AnalyticsOverviewPeriodResponse
     categories: list[CategorySummary]
 
 
 class AnalyticsBalanceTrendRequest(AnalyticsOverviewRequest):
-    granularity: BalanceGranularityEnum
+    @model_validator(mode='after')
+    def check_period(self):
+        period = self.date_to - self.date_from
+        if period < timedelta(hours=1):
+            raise ValueError("Период не может быть меньше 1 часа")
+        if period > timedelta(days=31):
+            raise ValueError("Период не может превышать 31 день")
+        return self
 
 
 class AnalyticsPeriodsComparison(Analytics):

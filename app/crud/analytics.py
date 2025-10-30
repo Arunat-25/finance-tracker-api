@@ -192,7 +192,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             "user_id": user_id,
             "list_account_id": data.list_account_id,
             "date_from": data.date_from.replace(tzinfo=None) - timedelta(hours=user_utc_offset),
-            "date_to": data.date_to.replace(tzinfo=None) + timedelta(days=1) - timedelta(hours=user_utc_offset),
+            "date_to": adjust_date_to_for_sql(data.date_to) - timedelta(hours=user_utc_offset),
         }
         sql_code = await get_sql_code("sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
@@ -208,24 +208,29 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         )
 
         period = data.date_to - data.date_from
-        #if period == timedelta(days=1):
-        return await get_balance_trend_for_day(
+        if period < timedelta(days=1):
+            granularity = 'hour'
+        else:
+            granularity = 'day'
+        return await get_balance_trend_for_period(
                 session=session,
                 data=data,
                 transactions=transactions,
                 user_id=user_id,
                 rates=rates,
-                user_utc_offset=user_utc_offset
+                user_utc_offset=user_utc_offset,
+                granularity=granularity
             )
 
 
-async def get_balance_trend_for_day(
+async def get_balance_trend_for_period(
         session:AsyncSession,
         data: AnalyticsBalanceTrendRequest,
         transactions: list,
         user_id: int,
         rates: dict,
         user_utc_offset: int,
+        granularity: str
 ):
     balance_by_hour = {}
     for hour in range(24):
@@ -333,3 +338,18 @@ async def convert_transactions_columns_to_currency(
         for column_to_convert in columns_to_convert:
             transaction[column_to_convert] = round(transaction[column_to_convert] / rate, 2)
     return transactions
+
+
+def adjust_date_to_for_sql(date_to):
+    if date_to.microsecond > 0:
+        delta = timedelta(microseconds=1)
+    elif date_to.second > 0:
+        delta = timedelta(seconds=1)
+    elif date_to.minute > 0:
+        delta = timedelta(minutes=1)
+    elif date_to.hour > 0:
+        delta = timedelta(hours=1)
+    else:
+        delta = timedelta(days=1)
+
+    return date_to + delta
