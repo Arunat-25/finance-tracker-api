@@ -314,7 +314,7 @@ async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, pa
             if account_id not in balance_trend:
                 accounts_for_get_balance.append(account_id)
 
-    if accounts_for_get_balance: # перевод к валюте
+    if accounts_for_get_balance:
         orm_accounts = await get_accounts(
             session=session,
             account_ids=accounts_for_get_balance,
@@ -323,7 +323,8 @@ async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, pa
         for orm_account in orm_accounts:
             balance_trend[orm_account.id] = {}
             for hour in range(24):
-                balance_trend[orm_account.id][hour] = orm_account.balance
+                rate = Decimal(rates[orm_account.currency])
+                balance_trend[orm_account.id][hour] = round(orm_account.balance / rate, 2)
     return balance_trend
 
 
