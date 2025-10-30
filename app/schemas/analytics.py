@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 
 from fastapi.openapi.models import Schema
@@ -20,8 +20,9 @@ class AnalyticsOverviewRequest(Analytics):
 
     @field_validator('date_to')
     def check_date_to(cls, value):
-        if value > datetime.now(timezone.utc):
+        if value > datetime.utcnow():
             raise ValueError('date_to cannot be greater than now')
+        return value
 
 
 class AnalyticsOverviewPeriodResponse(Analytics):
@@ -80,11 +81,12 @@ class AnalyticsIncomesByCategoryResponse(Analytics):
 class AnalyticsBalanceTrendRequest(AnalyticsOverviewRequest):
     @model_validator(mode='after')
     def check_period(self):
-        period = self.date_to - self.date_from
+        from app.crud.analytics import adjust_date_to_for_sql
+        period = adjust_date_to_for_sql(self.date_to) - self.date_from
         if period < timedelta(hours=1):
-            raise ValueError("Период не может быть меньше 1 часа")
+            raise ValueError("Period cannot be less than 1 hour")
         if period > timedelta(days=31):
-            raise ValueError("Период не может превышать 31 день")
+            raise ValueError("Period cannot be more than 31 days")
         return self
 
 

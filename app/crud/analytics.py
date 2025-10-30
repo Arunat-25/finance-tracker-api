@@ -232,7 +232,7 @@ async def get_balance_trend_for_period(
         user_utc_offset: int,
         granularity: str
 ):
-    balance_by_hour = {}
+    balance_trend = {}
     for hour in range(24):
         outstanding_accounts = data.list_account_id.copy()
         if not outstanding_accounts:
@@ -244,27 +244,27 @@ async def get_balance_trend_for_period(
                 break
 
             account_id = transaction["account_id"]
-            if account_id in balance_by_hour:
-                balance_by_hour[account_id][hour] = transaction["balance_after"]
+            if account_id in balance_trend:
+                balance_trend[account_id][hour] = transaction["balance_after"]
                 if account_id in outstanding_accounts:
                     outstanding_accounts.remove(account_id)
             else:
-                balance_by_hour[account_id] = {hour: transaction["balance_after"]}
+                balance_trend[account_id] = {hour: transaction["balance_after"]}
                 if account_id in outstanding_accounts:
                     outstanding_accounts.remove(account_id)
 
             if outstanding_accounts:
                 for outstanding_account in outstanding_accounts:
-                    if outstanding_account in balance_by_hour.keys():
-                        balance_by_hour[outstanding_account][hour] = balance_by_hour[outstanding_account][hour-1]
+                    if outstanding_account in balance_trend.keys():
+                        balance_trend[outstanding_account][hour] = balance_trend[outstanding_account][hour-1]
                         if account_id in outstanding_accounts:
                             outstanding_accounts.remove(account_id)
 
-            count_accounts_with_found_balance = len(balance_by_hour)
+            count_accounts_with_found_balance = len(balance_trend)
             if hour == 23:
                 print(count_accounts_with_found_balance, len(data.list_account_id))
             if hour == 23 and count_accounts_with_found_balance < len(data.list_account_id):
-                accounts_with_found_balance = balance_by_hour.keys()
+                accounts_with_found_balance = balance_trend.keys()
                 accounts_with_not_found_balance = list(
                     filter(
                         lambda x: x not in accounts_with_found_balance,
@@ -277,15 +277,15 @@ async def get_balance_trend_for_period(
                     "date_from": data.date_to.replace(tzinfo=None),
                     "date_to": datetime.utcnow() + timedelta(days=1) - timedelta(hours=user_utc_offset),
                 }
-                balance_by_hour_not_in_period = await get_balances_of_accounts_wiche_not_in_period(
+                balance_trend_not_in_period = await get_balances_of_accounts_wiche_not_in_period(
                     session=session,
                     params=params,
                     rates=rates
                 )
 
-                summary_balance_by_hour = {**balance_by_hour, **balance_by_hour_not_in_period}
-                return summary_balance_by_hour
-    return balance_by_hour
+                summary_balance_trend = {**balance_trend, **balance_trend_not_in_period}
+                return summary_balance_trend
+    return balance_trend
 
 
 async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, params: dict, rates: dict):
@@ -301,17 +301,17 @@ async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, pa
         rates=rates
     )
 
-    balance_by_hour = {}
+    balance_trend = {}
     for transaction in transactions:
-        balance_by_hour[transaction["account_id"]] = {}
+        balance_trend[transaction["account_id"]] = {}
         for hour in range(24):
-            balance_by_hour[transaction["account_id"]][hour] = transaction["balance_before"]
+            balance_trend[transaction["account_id"]][hour] = transaction["balance_before"]
 
     accounts_for_get_balance = []
     accounts = params["list_account_id"]
-    if len(balance_by_hour) < len(accounts):
+    if len(balance_trend) < len(accounts):
         for account_id in accounts:
-            if account_id not in balance_by_hour:
+            if account_id not in balance_trend:
                 accounts_for_get_balance.append(account_id)
 
     if accounts_for_get_balance: # перевод к валюте
@@ -321,10 +321,10 @@ async def get_balances_of_accounts_wiche_not_in_period(session: AsyncSession, pa
             user_id=params["user_id"]
         )
         for orm_account in orm_accounts:
-            balance_by_hour[orm_account.id] = {}
+            balance_trend[orm_account.id] = {}
             for hour in range(24):
-                balance_by_hour[orm_account.id][hour] = orm_account.balance
-    return balance_by_hour
+                balance_trend[orm_account.id][hour] = orm_account.balance
+    return balance_trend
 
 
 async def convert_transactions_columns_to_currency(
