@@ -220,7 +220,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
                 rates=rates,
                 user_utc_offset=user_utc_offset,
                 granularity=granularity
-            )
+        )
 
 
 async def get_balance_trend_for_period(
