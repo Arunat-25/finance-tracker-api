@@ -211,10 +211,18 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         period = adjusted_date_to - data.date_from
         if period <= timedelta(days=1):
             granularity = 'hour'
-            bucket_count = period.seconds//60//60 # количество часов в периоде, для которых находятся балансы
+            count_interval = int(period.total_seconds()//60//60)
+            intervals = get_list_with_intervals(data.date_from, data.date_to, granularity)
+            interval_order_and_interval = {}
+            for interval_order in range(count_interval):
+                interval_order_and_interval[interval_order] = intervals.index(interval_order)
         else:
             granularity = 'day'
-            bucket_count = period.seconds//60//60
+            count_interval = int(period.total_seconds()//60//60//24)
+            intervals = get_list_with_intervals(data.date_from, data.date_to, granularity)
+            interval_order_and_interval = {}
+            for interval_order in range(count_interval):
+                interval_order_and_interval[interval_order] = intervals[interval_order]
 
         if not transactions:
             params_to_get_balance_trend_for_accounts_which_not_in_period = params.copy()
@@ -224,7 +232,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
                 session=session,
                 params=params_to_get_balance_trend_for_accounts_which_not_in_period,
                 rates=rates,
-                bucket_count=bucket_count
+                count_interval=count_interval
             )
             return balance_trend
 
@@ -236,7 +244,8 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             rates=rates,
             user_utc_offset=user_utc_offset,
             granularity=granularity,
-            bucket_count=bucket_count
+            count_interval=count_interval,
+            interval_order_and_interval=interval_order_and_interval
         )
 
 
@@ -248,38 +257,45 @@ async def get_balance_trend_for_period(
         rates: dict,
         user_utc_offset: int,
         granularity: str,
-        bucket_count: int
+        count_interval: int,
+        interval_order_and_interval: dict
 ):
     balance_trend = {}
-    for hour in range(bucket_count):
+    for interval in range(count_interval):
+        # interval это порядок интервала времени для которого находится баланс
+        # например введено date_to = '2024-09-11 13:00:00' date_from = '2024-09-11 17:00:00'
+        # тогда interval = 1 будет соответствовать интервалу времени 13ч00мин00сек - 13ч59мин59сек
         outstanding_accounts = data.list_account_id.copy()
         if not outstanding_accounts:
             break
 
         for transaction in transactions:  # удалять те по которым прошел
-            transaction_hour = int(transaction["date"].time().hour)
-            if transaction_hour > hour:
+            if granularity == "day":
+                transaction_time = int(transaction["date"].day)
+            else:
+                transaction_time = int(transaction["date"].hour)
+            if transaction_time > interval_order_and_interval[interval]:
                 break
 
             account_id = transaction["account_id"]
             if account_id in balance_trend:
-                balance_trend[account_id][hour] = transaction["balance_after"]
+                balance_trend[account_id][interval] = transaction["balance_after"]
                 if account_id in outstanding_accounts:
                     outstanding_accounts.remove(account_id)
             else:
-                balance_trend[account_id] = {hour: transaction["balance_after"]}
+                balance_trend[account_id] = {interval: transaction["balance_after"]}
                 if account_id in outstanding_accounts:
                     outstanding_accounts.remove(account_id)
 
             if outstanding_accounts:
                 for outstanding_account in outstanding_accounts:
                     if outstanding_account in balance_trend.keys():
-                        balance_trend[outstanding_account][hour] = balance_trend[outstanding_account][hour-1]
+                        balance_trend[outstanding_account][interval] = balance_trend[outstanding_account][interval-1]
                         if account_id in outstanding_accounts:
                             outstanding_accounts.remove(account_id)
 
             count_accounts_with_found_balance = len(balance_trend)
-            if hour == bucket_count-1 and count_accounts_with_found_balance < len(data.list_account_id):
+            if interval == count_interval-1 and transaction is transactions[-1] and count_accounts_with_found_balance < len(data.list_account_id):
                 accounts_with_found_balance = balance_trend.keys()
                 accounts_with_not_found_balance = list(
                     filter(
@@ -297,7 +313,7 @@ async def get_balance_trend_for_period(
                     session=session,
                     params=params,
                     rates=rates,
-                    bucket_count=bucket_count
+                    count_interval=count_interval
                 )
 
                 summary_balance_trend = {**balance_trend, **balance_trend_not_in_period}
@@ -309,7 +325,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
         session: AsyncSession,
         params: dict,
         rates: dict,
-        bucket_count: int
+        count_interval: int
 ):
     sql_code = await get_sql_code("sql/get_first_transaction_from_from_date.sql")
     res = await session.execute(text(sql_code), params)
@@ -326,7 +342,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
     balance_trend = {}
     for transaction in transactions:
         balance_trend[transaction["account_id"]] = {}
-        for hour in range(bucket_count):
+        for hour in range(count_interval):
             balance_trend[transaction["account_id"]][hour] = transaction["balance_before"]
 
     accounts_for_get_balance = []
@@ -344,7 +360,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
         )
         for orm_account in orm_accounts:
             balance_trend[orm_account.id] = {}
-            for hour in range(bucket_count):
+            for hour in range(count_interval):
                 rate = Decimal(rates[orm_account.currency])
                 balance_trend[orm_account.id][hour] = round(orm_account.balance / rate, 2)
     return balance_trend
@@ -375,3 +391,27 @@ def adjust_date_to(date_to) -> datetime:
     else:
         delta = timedelta(days=1)
     return date_to + delta
+
+
+def get_list_with_intervals(date_from: datetime, date_to: datetime, granularity: str) -> list[int]:
+    list_with_intervals = []
+    if granularity == "hour":
+        if date_to.hour > date_from.hour:
+            list_with_intervals = [hour for hour in range(date_from.hour, date_to.hour + 1)]
+        elif date_to.hour <= date_from.hour:
+            list_with_intervals_first_part = [hour for hour in range(date_from.hour, 24)]
+            list_with_intervals_second_part = [hour for hour in range(0, date_to.hour+1)]
+            list_with_intervals = [*list_with_intervals_first_part, *list_with_intervals_second_part]
+    elif granularity == "day":
+        if date_to.month == date_from.month:
+            list_with_intervals = [day for day in range(date_from.day, date_to.day + 1)]
+        else:
+            is_leap_year = True if (date_from.year % 4 == 0 and date_from.year % 100 != 0) or \
+                                   (date_from.year % 400 == 0) else False
+            month_and_count_days = {1: 31, 2: 28 if not is_leap_year else 29, 3: 31, 4: 30, 5: 31, 6: 30,
+                                    7: 31, 8: 30, 9: 31, 10: 31, 11: 30, 12: 31}
+            last_day_of_month_of_date_from = month_and_count_days[date_from.month]
+            list_with_intervals_first_part = [day for day in range(date_from.day, last_day_of_month_of_date_from+1)]
+            list_with_intervals_second_part = [day for day in range(1, date_to.day+1)]
+            list_with_intervals = [*list_with_intervals_first_part, *list_with_intervals_second_part]
+    return list_with_intervals
