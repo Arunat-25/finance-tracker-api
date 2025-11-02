@@ -182,3 +182,5 @@ async def get_transactions(data: TransactionsGet, user_id: int):
         res = await session.execute(stmt)
         transactions = res.scalars().all()
         return transactions
+
+

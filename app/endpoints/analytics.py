@@ -1,4 +1,5 @@
 from datetime import datetime
+from os import times
 from typing import Annotated
 
 from fastapi import APIRouter
@@ -33,7 +34,11 @@ async def get_balance_trend(
         user_id: int = Depends(get_current_user_id),
         user_utc_offset: int = Depends(get_current_user_utc_offset)
 ):
-    return await get_balance_trend_data(data=data, user_id=user_id, user_utc_offset=user_utc_offset)
+    time_start = datetime.utcnow()
+    balance_trend = await get_balance_trend_data(data=data, user_id=user_id, user_utc_offset=user_utc_offset)
+    end = datetime.utcnow()
+    print(end-time_start)
+    return balance_trend
 
 
 @router.post("/compare-periods")

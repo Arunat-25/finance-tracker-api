@@ -192,7 +192,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         params = {
             "user_id": user_id,
             "list_account_id": data.list_account_id,
-            "date_from": data.date_from.replace(tzinfo=None) , #timedelta(hours=user_utc_offset),
+            "date_from": data.date_from, #timedelta(hours=user_utc_offset),
             "date_to": adjusted_date_to # - timedelta(hours=user_utc_offset),
         }
         sql_code = await get_sql_code("sql/balance_trend.sql")
@@ -201,7 +201,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
         rates = await get_rates(base_currency=data.currency.value)
-        transactions = await convert_transactions_columns_to_currency(
+        transactions = await convert_transactions_currency(
             transactions=transactions,
             columns_to_convert=["balance_before", "balance_after"],
             rates=rates,
@@ -226,8 +226,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
 
         if not transactions:
             params_to_get_balance_trend_for_accounts_which_not_in_period = params.copy()
-            params_to_get_balance_trend_for_accounts_which_not_in_period["date_to"] = datetime.utcnow() - \
-                                                                                      timedelta(hours=user_utc_offset)
+            params_to_get_balance_trend_for_accounts_which_not_in_period["date_to"] = datetime.utcnow()
             balance_trend = await get_balance_trend_for_accounts_which_not_in_period(
                 session=session,
                 params=params_to_get_balance_trend_for_accounts_which_not_in_period,
@@ -236,7 +235,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             )
             return balance_trend
 
-        return await get_balance_trend_for_period(
+        balance_trend = await get_balance_trend_for_period(
             session=session,
             data=data,
             transactions=transactions,
@@ -247,6 +246,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             count_interval=count_interval,
             interval_order_and_interval=interval_order_and_interval
         )
+        return balance_trend
 
 
 async def get_balance_trend_for_period(
@@ -261,41 +261,28 @@ async def get_balance_trend_for_period(
         interval_order_and_interval: dict
 ):
     balance_trend = {}
-    for interval in range(count_interval):
+    for interval_order in range(count_interval):
         # interval это порядок интервала времени для которого находится баланс
         # например введено date_to = '2024-09-11 13:00:00' date_from = '2024-09-11 17:00:00'
-        # тогда interval = 1 будет соответствовать интервалу времени 13ч00мин00сек - 13ч59мин59сек
-        outstanding_accounts = data.list_account_id.copy()
-        if not outstanding_accounts:
-            break
-
-        for transaction in transactions:  # удалять те по которым прошел
-            if granularity == "day":
-                transaction_time = int(transaction["date"].day)
+        # тогда interval_order = 0 будет соответствовать интервалу времени 13ч(13ч00мин00сек - 13ч59мин59сек)
+        for tran in transactions:  # удалять те по которым прошел
+            end_of_interval = get_end_of_interval(
+                date_from=data.date_from,
+                granularity=granularity,
+                interval_order=interval_order
+            )
+            if tran["date"] <= end_of_interval:
+                tran_account_id = tran["account_id"]
+                if tran_account_id in balance_trend:
+                    balance_trend[tran_account_id][interval_order] = tran["balance_after"]
+                else:
+                    balance_trend[tran_account_id] = {interval_order: tran["balance_after"]}
             else:
-                transaction_time = int(transaction["date"].hour)
-            if transaction_time > interval_order_and_interval[interval]:
                 break
 
-            account_id = transaction["account_id"]
-            if account_id in balance_trend:
-                balance_trend[account_id][interval] = transaction["balance_after"]
-                if account_id in outstanding_accounts:
-                    outstanding_accounts.remove(account_id)
-            else:
-                balance_trend[account_id] = {interval: transaction["balance_after"]}
-                if account_id in outstanding_accounts:
-                    outstanding_accounts.remove(account_id)
-
-            if outstanding_accounts:
-                for outstanding_account in outstanding_accounts:
-                    if outstanding_account in balance_trend.keys():
-                        balance_trend[outstanding_account][interval] = balance_trend[outstanding_account][interval-1]
-                        if account_id in outstanding_accounts:
-                            outstanding_accounts.remove(account_id)
-
             count_accounts_with_found_balance = len(balance_trend)
-            if interval == count_interval-1 and transaction is transactions[-1] and count_accounts_with_found_balance < len(data.list_account_id):
+            is_last_iteration = interval_order == count_interval-1 and tran is transactions[-1]
+            if is_last_iteration and count_accounts_with_found_balance < len(data.list_account_id):
                 accounts_with_found_balance = balance_trend.keys()
                 accounts_with_not_found_balance = list(
                     filter(
@@ -307,7 +294,7 @@ async def get_balance_trend_for_period(
                     "user_id": user_id,
                     "list_account_id": accounts_with_not_found_balance,
                     "date_from": data.date_to.replace(tzinfo=None),
-                    "date_to": datetime.utcnow() - timedelta(hours=user_utc_offset),
+                    "date_to": datetime.utcnow(),
                 }
                 balance_trend_not_in_period = await get_balance_trend_for_accounts_which_not_in_period(
                     session=session,
@@ -316,8 +303,8 @@ async def get_balance_trend_for_period(
                     count_interval=count_interval
                 )
 
-                summary_balance_trend = {**balance_trend, **balance_trend_not_in_period}
-                return summary_balance_trend
+                balance_trend = {**balance_trend, **balance_trend_not_in_period}
+                return balance_trend
     return balance_trend
 
 
@@ -332,50 +319,45 @@ async def get_balance_trend_for_accounts_which_not_in_period(
     transactions_RawMapping = res.mappings().all()
     transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
-    transactions = await convert_transactions_columns_to_currency(
+    transactions = await convert_transactions_currency(
         transactions=transactions,
         currency_key="currency",
         columns_to_convert=["balance_before"],
         rates=rates
     )
 
+    accounts_without_transactions = [*params["list_account_id"]]
     balance_trend = {}
-    for transaction in transactions:
-        balance_trend[transaction["account_id"]] = {}
-        for hour in range(count_interval):
-            balance_trend[transaction["account_id"]][hour] = transaction["balance_before"]
+    for tran in transactions:
+        balance_trend[tran["account_id"]] = {}
+        accounts_without_transactions.remove(tran["account_id"])
+        for interval_order in range(count_interval):
+            balance_trend[tran["account_id"]][interval_order] = tran["balance_before"]
 
-    accounts_for_get_balance = []
-    accounts = params["list_account_id"]
-    if len(balance_trend) < len(accounts):
-        for account_id in accounts:
-            if account_id not in balance_trend:
-                accounts_for_get_balance.append(account_id)
-
-    if accounts_for_get_balance:
+    if accounts_without_transactions:
         orm_accounts = await get_accounts(
             session=session,
-            account_ids=accounts_for_get_balance,
+            account_ids=accounts_without_transactions,
             user_id=params["user_id"]
         )
         for orm_account in orm_accounts:
             balance_trend[orm_account.id] = {}
-            for hour in range(count_interval):
+            for interval_order in range(count_interval):
                 rate = Decimal(rates[orm_account.currency])
-                balance_trend[orm_account.id][hour] = round(orm_account.balance / rate, 2)
+                balance_trend[orm_account.id][interval_order] = round(orm_account.balance / rate, 2)
     return balance_trend
 
 
-async def convert_transactions_columns_to_currency(
+async def convert_transactions_currency(
         transactions: list[dict],
         columns_to_convert: list[str],
         rates: dict,
         currency_key: str
 ) -> list:
-    for transaction in transactions:
-        rate = Decimal(rates[transaction[currency_key]])
+    for tran in transactions:
+        rate = Decimal(rates[tran[currency_key]])
         for column_to_convert in columns_to_convert:
-            transaction[column_to_convert] = round(transaction[column_to_convert] / rate, 2)
+            tran[column_to_convert] = round(tran[column_to_convert] / rate, 2)
     return transactions
 
 
@@ -409,9 +391,32 @@ def get_list_with_intervals(date_from: datetime, date_to: datetime, granularity:
             is_leap_year = True if (date_from.year % 4 == 0 and date_from.year % 100 != 0) or \
                                    (date_from.year % 400 == 0) else False
             month_and_count_days = {1: 31, 2: 28 if not is_leap_year else 29, 3: 31, 4: 30, 5: 31, 6: 30,
-                                    7: 31, 8: 30, 9: 31, 10: 31, 11: 30, 12: 31}
+                                    7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
             last_day_of_month_of_date_from = month_and_count_days[date_from.month]
             list_with_intervals_first_part = [day for day in range(date_from.day, last_day_of_month_of_date_from+1)]
             list_with_intervals_second_part = [day for day in range(1, date_to.day+1)]
             list_with_intervals = [*list_with_intervals_first_part, *list_with_intervals_second_part]
     return list_with_intervals
+
+
+def get_end_of_interval(date_from: datetime, granularity: str, interval_order: int) -> datetime:
+    if granularity == "day":
+        end_of_interval = date_from + timedelta(
+            days=interval_order, hours=23, minutes=59, seconds=59, microseconds=5999
+        )
+    else:  # если "hour"
+        end_of_interval = date_from + timedelta(
+            hours=interval_order, minutes=59, seconds=59, microseconds=5999
+        )
+    return end_of_interval
+
+
+async def do_db_request_and_get_transactions(session: AsyncSession, sql_code: str, params: dict) -> list[dict]:
+    res = await session.execute(text(sql_code), params)
+    transactions_RawMapping = res.mappings().all()
+    transactions = [dict(transaction) for transaction in transactions_RawMapping]
+    return transactions
+
+
+async def add_to_balance_trend():
+    pass

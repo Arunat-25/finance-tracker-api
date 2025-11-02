@@ -18,6 +18,7 @@ app = FastAPI()
 app.include_router(auth_router)
 app.include_router(account_router)
 app.include_router(category_router)
+
 app.include_router(transaction_router)
 app.include_router(analytics_router)
 
