@@ -17,8 +17,8 @@ from app.schemas.transaction import TransferCreate, TransactionIncomeCreate, Tra
 
 async def create_expense(data: TransactionExpenseCreate, user_id: int):
     async with session_factory() as session:
-        if not category_exists(session=session, user_id=user_id, category_id=data.category_id):
-            raise CategoryNotFound
+        if not await category_exists(session=session, user_id=user_id, category_id=data.category_id):
+            raise CategoryNotFound("Category not found")
 
         account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
         account.balance = account.balance - data.amount
@@ -47,7 +47,7 @@ async def create_expense(data: TransactionExpenseCreate, user_id: int):
 async def create_income(data: TransactionIncomeCreate, user_id: int):
     async with session_factory() as session:
         if not await category_exists(session=session, user_id=user_id, category_id=data.category_id):
-            raise CategoryNotFound
+            raise CategoryNotFound("Category not found")
 
         account = await get_account(session=session, account_id=data.account_id, user_id=user_id)
         account.balance = account.balance + data.amount
@@ -55,7 +55,7 @@ async def create_income(data: TransactionIncomeCreate, user_id: int):
         transaction = TransactionOrm(
             transaction_type=TransactionEnum.INCOME,
             amount=data.amount,
-            date=datetime.now(timezone.utc),
+            date=datetime.utcnow(),
             account_id=data.account_id,
             to_account_id=None,
             rate=None,
@@ -76,7 +76,7 @@ async def create_income(data: TransactionIncomeCreate, user_id: int):
 async def create_transfer(data: TransferCreate, user_id: int):
     async with session_factory() as session:
         if not await category_exists(session=session, user_id=user_id, category_id=data.category_id):
-            raise CategoryNotFound
+            raise CategoryNotFound("Category not found")
 
         account, to_account = await withdraw_and_deposit_money(
             session=session,
@@ -91,7 +91,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
         transfer = TransactionOrm(
             transaction_type=TransactionEnum.TRANSFER,
             amount=data.amount,
-            date=datetime.now(timezone.utc),
+            date=datetime.utcnow(),
             account_id=data.account_id,
             to_account_id=data.to_account_id,
             category_id=data.category_id,
@@ -105,7 +105,7 @@ async def create_transfer(data: TransferCreate, user_id: int):
         income_transfer = TransactionOrm(
             transaction_type=TransactionEnum.TRANSFER,
             amount=data.amount,
-            date=datetime.now(timezone.utc),
+            date=datetime.utcnow(),
             account_id=data.to_account_id,
             to_account_id=None,
             category_id=data.category_id,
@@ -174,13 +174,20 @@ async def get_transactions(data: TransactionsGet, user_id: int):
         if data.date_to:
             conditions.append(TransactionOrm.date < data.date_to + timedelta(days=1))
 
-        stmt = select(TransactionOrm
-                      ).where(*conditions
-                              ).order_by(TransactionOrm.id.desc()
-                                         ).limit(data.limit
-                                                 ).offset(data.offset)
+        stmt = select(
+            TransactionOrm
+        ).where(
+            *conditions
+        ).order_by(
+            TransactionOrm.id.desc()
+        ).limit(
+            data.limit
+        ).offset(
+            data.offset
+        )
         res = await session.execute(stmt)
         transactions = res.scalars().all()
+
         return transactions
 
 

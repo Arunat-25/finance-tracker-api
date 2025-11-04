@@ -30,11 +30,11 @@ async def create_user(session: AsyncSession, new_user: UserCreate):
     except IntegrityError:
          raise EmailAlreadyExists("Email уже зарегистрирован") # изменить обработку, так как не только когда email
                                                                # существует срабатывает IntegrityError
-    except Exception:
-         raise HTTPException(
-             status_code=500,
-             detail=f"Ошибка при создании пользователя"
-         )
+    # except Exception:
+    #      raise HTTPException(
+    #          status_code=500,
+    #          detail=f"Ошибка при создании пользователя"
+    #      )
 
 
 async def check_user(user: UserCheck):

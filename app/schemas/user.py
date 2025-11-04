@@ -11,6 +11,7 @@ class UserCreate(UserBase):
     name: str
     password: str
     email: EmailStr
+    utc_offset: int
 
 
 class UserCheck(UserBase):

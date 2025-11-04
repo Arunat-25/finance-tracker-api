@@ -3,7 +3,8 @@ from sqlalchemy.exc import DBAPIError
 
 from app.auth_dependencies import get_current_user, get_current_user_id
 from app.common.security import decode_token
-from app.crud.account import add_account, remove_account
+from app.crud.account import add_account, remove_account, get_account
+from app.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.schemas.account import AccountCreate, AccountDelete, AccountGet
 from app.schemas.access_token import AccessTokenCheck
@@ -30,9 +31,10 @@ async def delete_account(account: AccountDelete, user_id: int = Depends(get_curr
 
 
 @router.get("/get-account")
-async def get_account_detail(account_name: str, user_id: int = Depends(get_current_user_id)):
+async def get_account_detail(account_id: int, user_id: int = Depends(get_current_user_id)):
     try:
-        account = await get_account(account_name, user_id)
+        async with session_factory() as session:
+           account = await get_account(session, account_id, user_id)
         return account
     except NotFoundAccount as e:
         raise HTTPException(status_code=404, detail=str(e))
