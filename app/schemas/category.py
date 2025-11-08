@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.enum.category_type import CategoryEnum
+from app.domain.enums.category_type import CategoryTypeEnum
 
 
 class Category(BaseModel):
@@ -9,7 +9,7 @@ class Category(BaseModel):
 
 class CategoryCreate(Category):
     title: str
-    category_type: CategoryEnum
+    category_type: CategoryTypeEnum
 
 
 class CategoryDelete(Category):

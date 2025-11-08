@@ -1,18 +1,17 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.account import account_is_exists, get_account
-from app.crud.category import category_exists
+from app.repositories.account import get_account
+from app.repositories.category import category_exists
 from app.currency import get_rates
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotEnoughMoney, NotFoundAccount, CategoryNotFound
 from app.enum.transaction_type import TransactionEnum
-from app.models import TransactionOrm, AccountOrm
-from app.schemas.transaction import TransferCreate, TransactionIncomeCreate, TransactionExpenseCreate, TransactionsGet, \
-    Transaction
+from app.infrastructure.db.models import TransactionOrm, AccountOrm
+from app.schemas.transaction import TransferCreate, TransactionIncomeCreate, TransactionExpenseCreate, TransactionsGet
 
 
 async def create_expense(data: TransactionExpenseCreate, user_id: int):

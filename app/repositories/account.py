@@ -1,13 +1,12 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
-from app.models.account import AccountOrm
-from app.schemas.account import AccountCreate, AccountDelete, AccountGet, Account
+from app.infrastructure.db.models import AccountOrm
+from app.schemas.account import AccountCreate, AccountDelete
 
 
 async def add_account(account: AccountCreate, user_id: int):

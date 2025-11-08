@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
-from app.enum.category_type import CategoryEnum
-from app.models.category import CategoryOrm
+from app.domain.enums.category_type import CategoryTypeEnum
+from app.infrastructure.db.models import CategoryOrm
 from app.schemas.category import CategoryCreate, CategoryDelete
 
 
@@ -25,17 +25,17 @@ async def create_category(user_id: int, data: CategoryCreate):
 
 async def create_default_categories(user_id: int):
     default_categories = [
-        CategoryOrm(title="Зарплата", category_type=CategoryEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Подарок", category_type=CategoryEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Инвестиции", category_type=CategoryEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Стипендия", category_type=CategoryEnum.INCOME, user_id=user_id),
+        CategoryOrm(title="Зарплата", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
+        CategoryOrm(title="Подарок", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
+        CategoryOrm(title="Инвестиции", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
+        CategoryOrm(title="Стипендия", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
 
-        CategoryOrm(title="Развлечение", category_type=CategoryEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Продукты", category_type=CategoryEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Жилье", category_type=CategoryEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Транспорт", category_type=CategoryEnum.EXPENSE, user_id=user_id),
+        CategoryOrm(title="Развлечение", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
+        CategoryOrm(title="Продукты", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
+        CategoryOrm(title="Жилье", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
+        CategoryOrm(title="Транспорт", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
 
-        CategoryOrm(title="Перевод", category_type=CategoryEnum.TRANSFER, user_id=user_id),
+        CategoryOrm(title="Перевод", category_type=CategoryTypeEnum.TRANSFER, user_id=user_id),
     ]
 
     count = 0
@@ -84,7 +84,7 @@ async def remove_category(user_id: int, data: CategoryDelete):
     return {"message": "Категория удалена"}
 
 
-async def category_exists(session: AsyncSession, user_id: int, category_id: int):
+async def category_exists(session: AsyncSession, user_id: int, category_id: int): # нет проверки на удаленность категории
     stmt = select(CategoryOrm.id).where(CategoryOrm.id == category_id, CategoryOrm.user_id == user_id)
     res = await session.execute(stmt)
     category_id = res.scalar_one_or_none()

@@ -1,12 +1,7 @@
-from datetime import datetime
-
-import uvicorn, asyncio
+import uvicorn
 
 from fastapi import FastAPI
-from uvicorn import Config
 
-from app.db.session import engine
-from app.db.base_class import Base
 from app.endpoints.auth import router as auth_router
 from app.endpoints.account import router as account_router
 from app.endpoints.category import router as category_router

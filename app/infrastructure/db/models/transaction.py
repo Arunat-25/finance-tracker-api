@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import ForeignKey, CheckConstraint, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base_class import Base
+from app.infrastructure.db.base_class import Base
 
 
 class TransactionOrm(Base):

@@ -1,9 +1,8 @@
 from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import session_factory
-from app.models.user import UserOrm
+from app.infrastructure.db.session import session_factory
+from app.infrastructure.db.models.user import UserOrm
 
 
 async def is_email_verified(email: str):

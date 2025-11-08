@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth_dependencies import get_current_user_id
-from app.crud.transaction import create_transfer, create_expense, create_income, get_transactions
+from app.repositories.transaction import create_transfer, create_expense, create_income, get_transactions
 from app.endpoints.exceptions import NotEnoughMoney, NotFoundAccount, CategoryNotFound
 from app.schemas.transaction import TransferCreate, TransactionIncomeCreate, TransactionExpenseCreate, TransactionsGet
 

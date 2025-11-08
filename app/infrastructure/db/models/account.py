@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, CheckConstraint, text, DateTime, Numeric
+from sqlalchemy import ForeignKey, CheckConstraint, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base_class import Base
+from app.infrastructure.db.base_class import Base
 from decimal import Decimal
 
 

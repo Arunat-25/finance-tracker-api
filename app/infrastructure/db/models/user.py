@@ -4,7 +4,7 @@ from typing import Optional, List
 from sqlalchemy import text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base_class import Base
+from app.infrastructure.db.base_class import Base
 
 
 class UserOrm(Base):

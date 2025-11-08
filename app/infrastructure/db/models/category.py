@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, text, DateTime
+from sqlalchemy import ForeignKey, text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base_class import Base
+from app.infrastructure.db.base_class import Base
 
 
 

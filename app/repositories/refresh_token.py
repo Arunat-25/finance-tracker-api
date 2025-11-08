@@ -1,13 +1,10 @@
-from pycparser.ply.yacc import token
-from sqlalchemy import select, exists
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from app.common.security import create_token, decode_token
-from app.crud.user import get_user
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundToken
-from app.models.refresh_token import RefreshTokenOrm
-from app.models.user import UserOrm
+from app.infrastructure.db.models import RefreshTokenOrm
 from app.schemas.refresh_token import RefreshTokenCreate, RefreshTokenUpdate
 
 

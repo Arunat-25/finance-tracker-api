@@ -21,8 +21,8 @@ async def get_current_user_utc_offset(credentials: HTTPAuthorizationCredentials 
 
 
 async def get_current_user(user_id: int = Depends(get_current_user_id)):
-    from app.db.session import session_factory
-    from app.models.user import UserOrm
+    from app.infrastructure.db.session import session_factory
+    from app.infrastructure.db.models.user import UserOrm
 
     async with session_factory() as session:
         user = await session.get(UserOrm, user_id)

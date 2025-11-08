@@ -81,7 +81,7 @@ class AnalyticsIncomesByCategoryResponse(Analytics):
 class AnalyticsBalanceTrendRequest(AnalyticsOverviewRequest):
     @model_validator(mode='after')
     def check_period(self):
-        from app.crud.analytics import adjust_date_to
+        from app.repositories.analytics import adjust_date_to
         period = adjust_date_to(self.date_to.replace(tzinfo=None)) - self.date_from
         if period < timedelta(hours=1):
             raise ValueError("Period cannot be less than 1 hour")

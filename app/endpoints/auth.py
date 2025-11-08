@@ -1,30 +1,24 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Response, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.params import Query
 from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import EmailStr
-from sqlalchemy import select
 
 from app.auth_dependencies import bearer_scheme
 from app.common.security import create_token, check_verify_token
-from app.common.email import conf, send_email
-from app.crud.email import is_email_verified
-from app.crud.refresh_token import add_refresh_token, update_refresh_token
-from app.crud.user import create_user, check_user, get_user, remove_user
-from app.db.session import session_factory
+from app.common.email import send_email
+from app.repositories.refresh_token import add_refresh_token, update_refresh_token
+from app.repositories.user import create_user, check_user, get_user
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered, NotFoundToken
-from app.models.refresh_token import RefreshTokenOrm
-from app.models.user import UserOrm
 from app.schemas.email import EmailReceiveAgain
 from app.schemas.refresh_token import RefreshTokenCreate, RefreshTokenUpdate
-from app.schemas.user import UserSchema, UserCreate, UserCheck
-
+from app.schemas.user import UserSchema, UserCreate, UserCheck, UserTelegramCreate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post('/register', response_model=UserSchema, status_code=201)
-async def register(new_user: UserCreate):
+@router.post('/register', response_model=UserSchema, status_code=201) #не отправляю информацию, что было отправлено письмо
+async def register(new_user: UserCreate | UserTelegramCreate):
     try:
         async with session_factory() as session:
             user = await create_user(session, new_user)

@@ -14,6 +14,11 @@ class UserCreate(UserBase):
     utc_offset: int
 
 
+class UserTelegramCreate(UserBase):
+    telegram_id: int
+    utc_offset: int
+
+
 class UserCheck(UserBase):
     email: EmailStr
     password: str

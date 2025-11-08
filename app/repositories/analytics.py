@@ -1,5 +1,3 @@
-import asyncio, aiofiles
-
 from datetime import timedelta, datetime
 from decimal import Decimal
 from typing import Literal
@@ -7,12 +5,9 @@ from typing import Literal
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import app.enum.currency
-from app.crud.account import get_accounts
+from app.repositories.account import get_accounts
 from app.currency import get_rates
-from app.db.session import session_factory
-from app.models import TransactionOrm
-from app.models import CategoryOrm
+from app.infrastructure.db.session import session_factory
 from app.schemas.analytics import AnalyticsOverviewRequest, AnalyticsOverviewSummaryResponse, \
     AnalyticsOverviewTopCategoriesResponse, CategorySummary, AnalyticsOverviewPeriodResponse, AnalyticsOverviewResponse, \
     AnalyticsExpensesByCategoryRequest, AnalyticsExpensesByCategoryResponse, AnalyticsIncomesByCategoryRequest, \

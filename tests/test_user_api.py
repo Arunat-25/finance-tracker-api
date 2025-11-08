@@ -1,14 +1,9 @@
-import asyncio
-
-import aiohttp, pytest
-from sqlalchemy import select, delete
+import pytest
+from sqlalchemy import select
 
 from app.common.config import settings
 from app.common.security import hash_password
-from app.models.user import UserOrm
-from app.schemas.user import UserCreate
-from tests.fixtures_user import delete_test_user
-
+from app.infrastructure.db.models.user import UserOrm
 
 
 @pytest.mark.asyncio

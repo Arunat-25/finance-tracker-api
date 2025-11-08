@@ -6,3 +6,8 @@ from app.common.config import settings
 engine = create_async_engine(url=settings.DATABASE_URL, echo=False)
 
 session_factory = async_sessionmaker(engine)
+
+
+async def get_db_session() -> AsyncSession:
+    async with session_factory() as session:
+        yield session

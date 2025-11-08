@@ -1,13 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.exc import DBAPIError
 
-from app.auth_dependencies import get_current_user, get_current_user_id
-from app.common.security import decode_token
-from app.crud.account import add_account, remove_account, get_account
-from app.db.session import session_factory
+from app.auth_dependencies import get_current_user_id
+from app.repositories.account import add_account, remove_account, get_account
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
-from app.schemas.account import AccountCreate, AccountDelete, AccountGet
-from app.schemas.access_token import AccessTokenCheck
+from app.schemas.account import AccountCreate, AccountDelete
 
 router = APIRouter(prefix="/account", tags=["account"])
 

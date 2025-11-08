@@ -6,9 +6,9 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 from fastapi import HTTPException
 from sqlalchemy import select
 
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundToken
-from app.models.user import UserOrm
+from app.infrastructure.db.models.user import UserOrm
 
 
 def hash_password(password: str) -> bytes:

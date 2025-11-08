@@ -1,10 +1,6 @@
 import pytest_asyncio, pytest, asyncio, aiohttp
-from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.common.config import settings
 from tests.session import get_session
-from app.db.base_class import Base
-
 
 
 @pytest.fixture(scope="session")

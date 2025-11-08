@@ -1,12 +1,12 @@
 from fastapi import HTTPException
 
-from sqlalchemy.exc import IntegrityError, MultipleResultsFound
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import session_factory
+from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import EmailAlreadyExists, PasswordIsIncorrect, NotRegistered
-from app.models.user import UserOrm
+from app.infrastructure.db.models.user import UserOrm
 from app.common.security import hash_password, check_password, create_verify_token
 from app.schemas.user import UserCreate, UserCheck
 

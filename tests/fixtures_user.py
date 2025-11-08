@@ -1,12 +1,10 @@
-import pytest, aiohttp, pytest_asyncio, asyncio
+import aiohttp, pytest_asyncio
 
 from sqlalchemy import select, delete
 
-from app.crud.user import create_user
-from app.main import app
+from app.repositories.user import create_user
 from app.common.config import settings
-from app.endpoints.exceptions import EmailAlreadyExists
-from app.models.user import UserOrm
+from app.infrastructure.db.models.user import UserOrm
 from app.schemas.user import UserCreate
 
 
