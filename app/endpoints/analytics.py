@@ -1,14 +1,12 @@
 from datetime import datetime
-from os import times
-from typing import Annotated
 
 from fastapi import APIRouter
-from fastapi.params import Query, Depends
+from fastapi.params import Depends
 
-from app.auth_dependencies import get_current_user_id, get_current_user_utc_offset
+from app.dependencies.auth import get_current_user_id, get_current_user_utc_offset
 from app.repositories.analytics import get_overview_data, get_top_by_category_data, get_balance_trend_data
 from app.schemas.analytics import AnalyticsOverviewRequest, AnalyticsExpensesByCategoryRequest, AnalyticsIncomesByCategoryRequest, \
-    AnalyticsBalanceTrendRequest, AnalyticsPeriodsComparison, AnalyticsOverviewResponse
+    AnalyticsBalanceTrendRequest, AnalyticsPeriodsComparison
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 

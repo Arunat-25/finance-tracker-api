@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
 from app.application.services.category import CategoryService
-from app.auth_dependencies import get_current_user_id
+from app.dependencies.auth import get_current_user_id
 from app.dependencies.category import get_category_service
-from app.repositories.category import create_default_categories, create_category, remove_category
+from app.repositories.category import create_category, remove_category
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
 from app.schemas.category import CategoryCreate, CategoryDelete
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.params import Query
 from fastapi.security import HTTPAuthorizationCredentials
 
-from app.auth_dependencies import bearer_scheme
+from app.dependencies.auth import bearer_scheme
 from app.common.security import create_token, check_verify_token
 from app.common.email import send_email
 from app.repositories.refresh_token import add_refresh_token, update_refresh_token

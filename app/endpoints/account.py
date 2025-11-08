@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.exc import DBAPIError
 
-from app.auth_dependencies import get_current_user_id
+from app.dependencies.auth import get_current_user_id
 from app.repositories.account import add_account, remove_account, get_account
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
