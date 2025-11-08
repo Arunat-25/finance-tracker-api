@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
-from app.infrastructure.db.models import AccountOrm
+from app.infrastructure.models import AccountOrm
 from app.schemas.account import AccountCreate, AccountDelete
 
 

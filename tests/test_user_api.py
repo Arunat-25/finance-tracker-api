@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.common.config import settings
 from app.common.security import hash_password
-from app.infrastructure.db.models.user import UserOrm
+from app.infrastructure.models.user import UserOrm
 
 
 @pytest.mark.asyncio

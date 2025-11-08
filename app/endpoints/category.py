@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
-from app.application.services.category import CategoryService
+from app.application.services.category_service import CategoryService
 from app.dependencies.auth import get_current_user_id
 from app.dependencies.category import get_category_service
 from app.repositories.category import create_category, remove_category
@@ -20,9 +20,13 @@ async def create_system_categories(
 
 
 @router.post("/create-personal-category")
-async def create_personal_category(data: CategoryCreate, user_id: int = Depends(get_current_user_id)):
+async def create_personal_category(
+        data: CategoryCreate,
+        user_id: int = Depends(get_current_user_id),
+        category_service: CategoryService = Depends(get_category_service)
+):
     try:
-        created_category = await create_category(user_id=user_id, data=data)
+        created_category = await category_service.create_category(user_id=user_id, data=data)
         return created_category
     except CategoryAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))

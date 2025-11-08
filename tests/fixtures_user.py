@@ -4,7 +4,7 @@ from sqlalchemy import select, delete
 
 from app.repositories.user import create_user
 from app.common.config import settings
-from app.infrastructure.db.models.user import UserOrm
+from app.infrastructure.models.user import UserOrm
 from app.schemas.user import UserCreate
 
 

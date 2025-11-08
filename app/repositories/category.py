@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
 from app.domain.enums.category_type import CategoryTypeEnum
-from app.infrastructure.db.models import CategoryOrm
+from app.infrastructure.models import CategoryOrm
 from app.schemas.category import CategoryCreate, CategoryDelete
 
 

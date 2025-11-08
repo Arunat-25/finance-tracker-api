@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 from app.common.security import create_token, decode_token
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundToken
-from app.infrastructure.db.models import RefreshTokenOrm
+from app.infrastructure.models import RefreshTokenOrm
 from app.schemas.refresh_token import RefreshTokenCreate, RefreshTokenUpdate
 
 

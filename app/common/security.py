@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundToken
-from app.infrastructure.db.models.user import UserOrm
+from app.infrastructure.models.user import UserOrm
 
 
 def hash_password(password: str) -> bytes:

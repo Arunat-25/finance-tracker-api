@@ -9,3 +9,8 @@ class CategoryRepositoryInterface(ABC):
     @abstractmethod
     async def create_categories(self, categories: list[Category], user_id: int) -> list[Category]:
         pass
+
+
+    @abstractmethod
+    async def create_category(self, category: Category, user_id: int) -> Category:
+        pass
