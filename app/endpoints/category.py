@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
+from app.application.dtos.category_dto import CategoryCreateDTO
 from app.application.services.category_service import CategoryService
 from app.dependencies.auth import get_current_user_id
 from app.dependencies.category import get_category_service
@@ -26,7 +27,8 @@ async def create_personal_category(
         category_service: CategoryService = Depends(get_category_service)
 ):
     try:
-        created_category = await category_service.create_category(user_id=user_id, data=data)
+        data_dto = CategoryCreateDTO(name=data.title, category_type=data.category_type, user_id=user_id)
+        created_category = await category_service.create_category(dto=data_dto)
         return created_category
     except CategoryAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))

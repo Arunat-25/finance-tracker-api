@@ -37,9 +37,9 @@ class CategoryService:
 
 
     async def create_category(self, dto: CategoryCreateDTO) -> CategoryResponseDTO:
-        category_entity = await self._dto_to_entity_to_create(dto)
-        created_category_entity = await self.category_repo.create_category(category=category_entity, user_id=user_id)
-        created_category = await self._entity_to_response_dto(created_category_entity)
+        category_entity = self._dto_to_entity_to_create(dto)
+        created_category_entity = await self.category_repo.create_category(category=category_entity, user_id=dto.user_id)
+        created_category = self._entity_to_response_dto(created_category_entity)
         return created_category
 
 
