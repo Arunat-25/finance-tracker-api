@@ -7,3 +7,4 @@ __pycache__
 .app/common/private.pem
 .app/common/public.pe
 задачи*.txt
+git_push.py
