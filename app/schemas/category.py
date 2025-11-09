@@ -13,4 +13,4 @@ class CategoryCreate(Category):
 
 
 class CategoryDelete(Category):
-    title: str
+    category_id: int

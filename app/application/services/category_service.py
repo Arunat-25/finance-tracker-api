@@ -1,7 +1,7 @@
 from sqlalchemy.testing.suite.test_reflection import users
 from unicodedata import category
 
-from app.application.dtos.category_dto import CategoryCreateDTO, CategoryResponseDTO
+from app.application.dtos.category_dto import CategoryCreateDTO, CategoryResponseDTO, CategoryDeleteDTO
 from app.domain.interfaces.category import CategoryRepositoryInterface
 from app.domain.entities.category import Category
 from app.domain.enums.category_type import CategoryTypeEnum
@@ -11,6 +11,13 @@ from app.repositories.category import create_category
 class CategoryService:
     def __init__(self, category_repo: CategoryRepositoryInterface):
         self.category_repo = category_repo
+
+
+    async def delete_category_by_id(self, dto: CategoryDeleteDTO):
+        category_entity = self._dto_to_entity(dto)
+        deleted_category_entity = await self.category_repo.delete_category_by_id(category_entity)
+        deleted_category = self._entity_to_response_dto(deleted_category_entity)
+        return deleted_category
 
 
     async def create_default_categories(self, user_id: int) -> list[CategoryResponseDTO]:
@@ -37,18 +44,19 @@ class CategoryService:
 
 
     async def create_category(self, dto: CategoryCreateDTO) -> CategoryResponseDTO:
-        category_entity = self._dto_to_entity_to_create(dto)
+        category_entity = self._dto_to_entity(dto)
         created_category_entity = await self.category_repo.create_category(category=category_entity, user_id=dto.user_id)
         created_category = self._entity_to_response_dto(created_category_entity)
         return created_category
 
 
-    def _dto_to_entity_to_create(self, dto) -> Category:
-        entity = Category(
-            name=dto.name,
-            category_type=dto.category_type,
-            owner_id=dto.user_id
-        )
+    def _dto_to_entity(self, dto) -> Category:
+        entity = Category(owner_id=dto.user_id)
+        if hasattr(dto, 'name'): entity.name = dto.name
+        if hasattr(dto, 'category_type'): entity.category_type = dto.category_type
+        if hasattr(dto, 'category_id'): entity.category_id = dto.category_id
+        if hasattr(dto, 'created_at'): entity.created_at = dto.created_at
+        if hasattr(dto, 'deleted_at'): entity.deleted_at = dto.deleted_at
         return entity
 
 

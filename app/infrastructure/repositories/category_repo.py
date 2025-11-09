@@ -1,16 +1,40 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from unicodedata import category
 
 from app.domain.interfaces.category import CategoryRepositoryInterface
 from app.domain.entities.category import Category
 from app.domain.enums.category_type import CategoryTypeEnum
-from app.endpoints.exceptions import CategoryAlreadyExists
+from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
 from app.infrastructure.models import CategoryOrm
 
 
 class CategoryRepository(CategoryRepositoryInterface):
     def __init__(self, session: AsyncSession):
         self.session = session
+
+
+    async def delete_category_by_id(self, category: Category) -> Category:
+        stmt = select(CategoryOrm).where(
+            CategoryOrm.id == category.category_id,
+            CategoryOrm.user_id == category.owner_id,
+            CategoryOrm.is_deleted == False
+        )
+        result = await self.session.execute(stmt)
+        category_orm = result.scalar_one_or_none()
+
+        if category_orm is None:
+            raise CategoryNotFound("Category not found")
+
+        category_orm.is_deleted = True
+        category_orm.deleted_at = datetime.utcnow()
+        await self.session.commit()
+        await self.session.refresh(category_orm)
+
+        deleted_category = self._orm_to_entity(category_orm)
+        return deleted_category
 
 
     async def create_category(self, category: Category, user_id: int) -> Category:

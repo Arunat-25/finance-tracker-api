@@ -8,6 +8,7 @@ from app.dependencies.category import get_category_service
 from app.repositories.category import create_category, remove_category
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
 from app.schemas.category import CategoryCreate, CategoryDelete
+from dtos.category_dto import CategoryDeleteDTO
 
 router = APIRouter(prefix="/category", tags=["category"])
 
@@ -35,8 +36,14 @@ async def create_personal_category(
 
 
 @router.delete("/delete-category")
-async def delete_category(data: CategoryDelete, user_id: int = Depends(get_current_user_id)):
+async def delete_category(
+        data: CategoryDelete,
+        user_id: int = Depends(get_current_user_id),
+        category_service: CategoryService = Depends(get_category_service)
+):
     try:
-        return await remove_category(user_id=user_id, data=data)
+        category_dto = CategoryDeleteDTO(category_id=data.category_id, user_id=user_id)
+        deleted_category = await category_service.delete_category_by_id(category_dto)
+        return deleted_category
     except CategoryNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))

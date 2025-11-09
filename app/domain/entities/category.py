@@ -6,9 +6,9 @@ from app.domain.enums.category_type import CategoryTypeEnum
 class Category:
     def __init__(
             self,
-            name: str,
-            category_type: CategoryTypeEnum,
             owner_id: int,
+            name: str | None = None,
+            category_type: CategoryTypeEnum | None = None,
             category_id: None | int = None,
             created_at: datetime | None = None,
             deleted_at: datetime | None = None

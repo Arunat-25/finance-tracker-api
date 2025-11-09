@@ -21,3 +21,9 @@ class CategoryResponseDTO(CategoryDTO):
     category_id: int
     created_at: datetime
     deleted_at: datetime | None
+
+
+@dataclass
+class CategoryDeleteDTO:
+    category_id: int
+    user_id: int
