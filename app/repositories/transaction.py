@@ -9,7 +9,7 @@ from app.repositories.category import category_exists
 from app.currency import get_rates
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotEnoughMoney, NotFoundAccount, CategoryNotFound
-from app.enum.transaction_type import TransactionEnum
+from enums.transaction_type import TransactionEnum
 from app.infrastructure.models import TransactionOrm, AccountOrm
 from app.schemas.transaction import TransferCreate, TransactionIncomeCreate, TransactionExpenseCreate, TransactionsGet
 

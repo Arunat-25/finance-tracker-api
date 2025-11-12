@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 from decimal import Decimal
 
-from app.enum.transaction_type import TransactionEnum
+from enums.transaction_type import TransactionEnum
 
 
 class Transaction(BaseModel):
