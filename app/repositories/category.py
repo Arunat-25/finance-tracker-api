@@ -1,91 +1,17 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db.session import session_factory
-from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
-from app.domain.enums.category_type import CategoryTypeEnum
 from app.infrastructure.models import CategoryOrm
-from app.schemas.category import CategoryCreate, CategoryDelete
-
-
-async def create_category(user_id: int, data: CategoryCreate):
-    async with session_factory() as session:
-        if await is_category_exist(session=session, user_id=user_id, category_title=data.title):
-            raise CategoryAlreadyExists("Категория уже существует")
-
-        category = CategoryOrm(title=data.title, user_id=user_id, category_type=data.category_type)
-        session.add(category)
-        await session.commit()
-        await session.refresh(category)
-    return category
 
 
 
-async def create_default_categories(user_id: int):
-    default_categories = [
-        CategoryOrm(title="Зарплата", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Подарок", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Инвестиции", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
-        CategoryOrm(title="Стипендия", category_type=CategoryTypeEnum.INCOME, user_id=user_id),
 
-        CategoryOrm(title="Развлечение", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Продукты", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Жилье", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
-        CategoryOrm(title="Транспорт", category_type=CategoryTypeEnum.EXPENSE, user_id=user_id),
-
-        CategoryOrm(title="Перевод", category_type=CategoryTypeEnum.TRANSFER, user_id=user_id),
-    ]
-
-    count = 0
-
-    async with session_factory() as session:
-        for default_category in default_categories:
-            if await is_category_exist(session, default_category.user_id, default_category.title):
-                continue
-            session.add(default_category)
-            count += 1
-        await session.commit()
-
-    return {"message": f"Системные категории созданы, кол-во: {count}"}
-
-
-async def is_category_exist(session: AsyncSession, user_id: int, category_title: str):
+async def category_exists(session: AsyncSession, user_id: int, category_id: int):
     stmt = select(CategoryOrm.id).where(
-        CategoryOrm.title == category_title,
+        CategoryOrm.id == category_id,
         CategoryOrm.user_id == user_id,
-        CategoryOrm.is_deleted == False
+        CategoryOrm.is_deleted == False,
     )
-
-    res = await session.execute(stmt)
-    category_id = res.scalar_one_or_none()
-    if category_id is None:
-        return False
-    return True
-
-
-async def remove_category(user_id: int, data: CategoryDelete):
-    async with session_factory() as session:
-        stmt = select(CategoryOrm).where(
-            CategoryOrm.title == data.title,
-                        CategoryOrm.user_id == user_id,
-                        CategoryOrm.is_deleted == False
-        )
-        res = await session.execute(stmt)
-        category = res.scalar_one_or_none()
-
-        if category is None:
-            raise CategoryNotFound("Такой категории у вас нет")
-
-        category.is_deleted = True
-        category.deleted_at = datetime.now(timezone.utc)
-        await session.commit()
-    return {"message": "Категория удалена"}
-
-
-async def category_exists(session: AsyncSession, user_id: int, category_id: int): # нет проверки на удаленность категории
-    stmt = select(CategoryOrm.id).where(CategoryOrm.id == category_id, CategoryOrm.user_id == user_id)
     res = await session.execute(stmt)
     category_id = res.scalar_one_or_none()
     if category_id is None:

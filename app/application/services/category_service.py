@@ -5,7 +5,6 @@ from app.application.dtos.category_dto import CategoryCreateDTO, CategoryRespons
 from app.domain.interfaces.category_interface import CategoryRepositoryInterface
 from app.domain.entities.category import Category
 from app.domain.enums.category_type import CategoryTypeEnum
-from app.repositories.category import create_category
 
 
 class CategoryService:
