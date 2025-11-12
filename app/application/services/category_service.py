@@ -2,7 +2,7 @@ from sqlalchemy.testing.suite.test_reflection import users
 from unicodedata import category
 
 from app.application.dtos.category_dto import CategoryCreateDTO, CategoryResponseDTO, CategoryDeleteDTO
-from app.domain.interfaces.category import CategoryRepositoryInterface
+from app.domain.interfaces.category_interface import CategoryRepositoryInterface
 from app.domain.entities.category import Category
 from app.domain.enums.category_type import CategoryTypeEnum
 from app.repositories.category import create_category

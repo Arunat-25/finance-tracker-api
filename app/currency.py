@@ -1,8 +1,6 @@
 import aiohttp
 import asyncio
 
-from app.enum.currency import CurrencyEnum
-
 
 async def get_rates(base_currency: str):
     async with aiohttp.ClientSession(base_url="https://v6.exchangerate-api.com/") as session:

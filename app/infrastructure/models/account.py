@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import List
+from decimal import Decimal
 
 from sqlalchemy import ForeignKey, CheckConstraint, DateTime, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.base_class import Base
-from decimal import Decimal
+
 
 
 class AccountOrm(Base):

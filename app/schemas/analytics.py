@@ -1,11 +1,9 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
-from fastapi.openapi.models import Schema
-from pydantic import BaseModel, computed_field, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 
-from app.enum.analytics import BalanceGranularityEnum
-from app.enum.currency import CurrencyEnum
+from enums.currency import CurrencyEnum
 
 
 class Analytics(BaseModel):

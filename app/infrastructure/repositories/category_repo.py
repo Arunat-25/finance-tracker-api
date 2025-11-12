@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from unicodedata import category
 
-from app.domain.interfaces.category import CategoryRepositoryInterface
+from app.domain.interfaces.category_interface import CategoryRepositoryInterface
 from app.domain.entities.category import Category
 from app.domain.enums.category_type import CategoryTypeEnum
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
@@ -40,7 +40,9 @@ class CategoryRepository(CategoryRepositoryInterface):
     async def create_category(self, category: Category, user_id: int) -> Category:
         if await self.category_exists_by_name_and_user(category, user_id):
            raise CategoryAlreadyExists("Category already exists")
+
         category_orm = self._entity_to_orm(category, user_id)
+
         self.session.add(category_orm)
         await self.session.commit()
         await self.session.refresh(category_orm)
