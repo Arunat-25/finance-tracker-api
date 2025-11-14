@@ -21,7 +21,7 @@ def check_password(password: str, hashed: bytes) -> bool:
 
 
 def create_token(data: dict, token_type: str) -> str:
-    with open("C:/Users/aruna/Desktop/finance-tracker-api/app/common/private.pem", "rb") as file_key:
+    with open("app/common/private.pem", "rb") as file_key:
         private_key = file_key.read()
     exp = None
     if token_type == "access":
@@ -35,7 +35,7 @@ def create_token(data: dict, token_type: str) -> str:
 
 def decode_token(token: str) -> dict:
     try:
-        with open("C:/Users/aruna/Desktop/finance-tracker-api/app/common/public.pem", "rb") as file_key:
+        with open("app/common/public.pem", "rb") as file_key:
             public_key = file_key.read()
         return jwt.decode(token, public_key, algorithms=["RS256"])
 

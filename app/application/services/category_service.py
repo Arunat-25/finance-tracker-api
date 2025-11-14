@@ -1,5 +1,4 @@
 from sqlalchemy.testing.suite.test_reflection import users
-from unicodedata import category
 
 from app.application.dtos.category_dto import CategoryCreateDTO, CategoryResponseDTO, CategoryDeleteDTO
 from app.domain.interfaces.category_interface import CategoryRepositoryInterface

@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from dataclasses import dataclass
 
-from enums.currency import CurrencyEnum
+from app.domain.enums.currency import CurrencyEnum
 
 
 @dataclass

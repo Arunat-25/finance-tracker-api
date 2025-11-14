@@ -2,7 +2,6 @@ from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from unicodedata import category
 
 from app.domain.interfaces.category_interface import CategoryRepositoryInterface
 from app.domain.entities.category import Category

@@ -7,7 +7,7 @@ from app.dependencies.auth import get_current_user_id
 from app.dependencies.category_dependencies import get_category_service
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound
 from app.schemas.category import CategoryCreate, CategoryDelete
-from dtos.category_dto import CategoryDeleteDTO
+from app.application.dtos.category_dto import CategoryDeleteDTO
 
 router = APIRouter(prefix="/category", tags=["category"])
 

@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from enums.currency import CurrencyEnum
+from app.domain.enums.currency import CurrencyEnum
 
 
 class Account(BaseModel):

@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from enums.currency import CurrencyEnum
+from app.domain.enums.currency import CurrencyEnum
 
 
 class Account:

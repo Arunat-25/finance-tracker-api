@@ -1,0 +1,38 @@
+networks:
+  finance-tracker-api:
+
+volumes:
+  postgres_data:
+
+services:
+  api:
+    build: .
+    container_name: "finance-tracker-api"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - APP_URL=http://0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - finance-tracker-api
+
+
+  db:
+    image: postgres:16
+    container_name: "finance-tracker-db"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finance-tracker-api

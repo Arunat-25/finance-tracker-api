@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from entities.account import Account
-from enums.currency import CurrencyEnum
+from app.domain.entities.account import Account
+from app.domain.enums.currency import CurrencyEnum
 from app.endpoints.exceptions import AccountAlreadyExists, NotFoundAccount
-from interfaces.account_interface import AccountRepositoryInterface
+from app.domain.interfaces.account_interface import AccountRepositoryInterface
 from app.infrastructure.models import AccountOrm
 
 

@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 from decimal import Decimal
 
-from enums.transaction_type import TransactionEnum
+from app.domain.enums.transaction_type import TransactionEnum
 
 
 class Transaction(BaseModel):

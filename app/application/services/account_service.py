@@ -1,6 +1,6 @@
-from dtos.account_dto import AccountDTO, AccountCreateDTO, AccountResponseDTO, AccountDeleteDTO, AccountGetDTO
-from entities.account import Account
-from interfaces.account_interface import AccountRepositoryInterface
+from app.application.dtos.account_dto import AccountDTO, AccountCreateDTO, AccountResponseDTO, AccountDeleteDTO, AccountGetDTO
+from app.domain.entities.account import Account
+from app.domain.interfaces.account_interface import AccountRepositoryInterface
 
 
 class AccountService:

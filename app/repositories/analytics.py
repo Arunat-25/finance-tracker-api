@@ -26,7 +26,7 @@ async def get_overview_data(data: AnalyticsOverviewRequest, user_id: int):
 
         rates = await get_rates(base_currency=data.currency.value)
 
-        sql_code_summary = await get_sql_code("sql/overview_summary.sql")
+        sql_code_summary = await get_sql_code("app/infrastructure/sql/overview_summary.sql")
         result_summary = await session.execute(text(sql_code_summary), params)
         filtered_transactions = result_summary.mappings().all()
 
@@ -68,7 +68,7 @@ async def get_overview_data(data: AnalyticsOverviewRequest, user_id: int):
             transaction_count=transaction_count,
         )
 
-        sql_code_top_categories = await get_sql_code("sql/overview_top_categories.sql")
+        sql_code_top_categories = await get_sql_code("app/infrastructure/sql/overview_top_categories.sql")
         result_top_categories = await session.execute(text(sql_code_top_categories), params)
         list_RowMapping_categories = result_top_categories.mappings().all()
         list_dict_categories = [dict(category) for category in list_RowMapping_categories]
@@ -143,7 +143,7 @@ async def get_top_by_category_data(
             "transaction_type": transactions_type
         }
 
-        sql_code = await get_sql_code("sql/expenses_or_incomes_by_category.sql")
+        sql_code = await get_sql_code("app/infrastructure/sql/expenses_or_incomes_by_category.sql")
         res = await session.execute(text(sql_code), params)
         categories_raw = res.mappings().all()
 
@@ -190,7 +190,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             "date_from": data.date_from, #timedelta(hours=user_utc_offset),
             "date_to": adjusted_date_to # - timedelta(hours=user_utc_offset),
         }
-        sql_code = await get_sql_code("sql/balance_trend.sql")
+        sql_code = await get_sql_code("app/infrastructure/sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
         transactions_RawMapping = res.mappings().all()
         transactions = [dict(transaction) for transaction in transactions_RawMapping]
@@ -309,7 +309,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
         rates: dict,
         count_interval: int
 ):
-    sql_code = await get_sql_code("sql/get_first_transaction_from_from_date.sql")
+    sql_code = await get_sql_code("app/infrastructure/sql/get_first_transaction_from_from_date.sql")
     res = await session.execute(text(sql_code), params)
     transactions_RawMapping = res.mappings().all()
     transactions = [dict(transaction) for transaction in transactions_RawMapping]

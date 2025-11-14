@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from enums.currency import CurrencyEnum
+from app.domain.enums.currency import CurrencyEnum
 
 
 class Analytics(BaseModel):

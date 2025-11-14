@@ -6,8 +6,8 @@ from app.dependencies.auth import get_current_user_id
 from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.schemas.account import AccountCreate, AccountDelete
-from dtos.account_dto import AccountCreateDTO, AccountDeleteDTO, AccountGetDTO
-from services.account_service import AccountService
+from app.application.dtos.account_dto import AccountCreateDTO, AccountDeleteDTO, AccountGetDTO
+from app.application.services.account_service import AccountService
 
 router = APIRouter(prefix="/account", tags=["account"])
 
