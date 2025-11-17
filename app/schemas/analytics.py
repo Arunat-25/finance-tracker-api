@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, Field
 
 from app.domain.enums.currency import CurrencyEnum
 
@@ -13,8 +13,16 @@ class Analytics(BaseModel):
 class AnalyticsOverviewRequest(Analytics):
     list_account_id: list[int]
     currency: CurrencyEnum
-    date_from: datetime
-    date_to: datetime
+    date_from: datetime = Field(examples=["2025-11-17 10:50"])
+    date_to: datetime = Field(examples=["2025-11-17 11:50"])
+
+
+    @field_validator('date_from', 'date_to')
+    def check_naive_datetime(cls, value):
+        if value.tzinfo is not None:
+            raise ValueError('Datetime must be naive (without timezone)')
+        return value
+
 
     @field_validator('date_to')
     def check_date_to(cls, value):
@@ -24,8 +32,8 @@ class AnalyticsOverviewRequest(Analytics):
 
 
 class AnalyticsOverviewPeriodResponse(Analytics):
-    date_from: datetime
-    date_to: datetime
+    date_from: datetime = Field(examples=["2025-11-17 10:50"])
+    date_to: datetime = Field(examples=["2025-11-17 11:50"])
 
 
 class AnalyticsOverviewSummaryResponse(Analytics):

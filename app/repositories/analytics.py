@@ -187,8 +187,8 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         params = {
             "user_id": user_id,
             "list_account_id": data.list_account_id,
-            "date_from": data.date_from, #timedelta(hours=user_utc_offset),
-            "date_to": adjusted_date_to # - timedelta(hours=user_utc_offset),
+            "date_from": data.date_from - timedelta(hours=user_utc_offset),
+            "date_to": adjusted_date_to - timedelta(hours=user_utc_offset),
         }
         sql_code = await get_sql_code("app/infrastructure/sql/balance_trend.sql")
         res = await session.execute(text(sql_code), params)
@@ -196,7 +196,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
         rates = await get_rates(base_currency=data.currency.value)
-        transactions = await convert_transactions_currency(
+        transactions = await _convert_transactions_currency(
             transactions=transactions,
             columns_to_convert=["balance_before", "balance_after"],
             rates=rates,
@@ -207,14 +207,14 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         if period <= timedelta(days=1):
             granularity = 'hour'
             count_interval = int(period.total_seconds()//60//60)
-            intervals = get_list_with_intervals(data.date_from, data.date_to, granularity)
+            intervals = _get_list_with_intervals(data.date_from, data.date_to, granularity)
             interval_order_and_interval = {}
             for interval_order in range(count_interval):
-                interval_order_and_interval[interval_order] = intervals.index(interval_order)
+                interval_order_and_interval[interval_order] = intervals[interval_order]
         else:
             granularity = 'day'
             count_interval = int(period.total_seconds()//60//60//24)
-            intervals = get_list_with_intervals(data.date_from, data.date_to, granularity)
+            intervals = _get_list_with_intervals(data.date_from, data.date_to, granularity)
             interval_order_and_interval = {}
             for interval_order in range(count_interval):
                 interval_order_and_interval[interval_order] = intervals[interval_order]
@@ -222,7 +222,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         if not transactions:
             params_to_get_balance_trend_for_accounts_which_not_in_period = params.copy()
             params_to_get_balance_trend_for_accounts_which_not_in_period["date_to"] = datetime.utcnow()
-            balance_trend = await get_balance_trend_for_accounts_which_not_in_period(
+            balance_trend = await _get_balance_trend_for_accounts_which_not_in_period(
                 session=session,
                 params=params_to_get_balance_trend_for_accounts_which_not_in_period,
                 rates=rates,
@@ -230,7 +230,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
             )
             return balance_trend
 
-        balance_trend = await get_balance_trend_for_period(
+        balance_trend = await _get_balance_trend_for_period(
             session=session,
             data=data,
             transactions=transactions,
@@ -244,7 +244,7 @@ async def get_balance_trend_data(data: AnalyticsBalanceTrendRequest, user_id: in
         return balance_trend
 
 
-async def get_balance_trend_for_period(
+async def _get_balance_trend_for_period(
         session:AsyncSession,
         data: AnalyticsBalanceTrendRequest,
         transactions: list,
@@ -261,7 +261,7 @@ async def get_balance_trend_for_period(
         # например введено date_to = '2024-09-11 13:00:00' date_from = '2024-09-11 17:00:00'
         # тогда interval_order = 0 будет соответствовать интервалу времени 13ч(13ч00мин00сек - 13ч59мин59сек)
         for tran in transactions:  # удалять те по которым прошел
-            end_of_interval = get_end_of_interval(
+            end_of_interval = _get_end_of_interval(
                 date_from=data.date_from,
                 granularity=granularity,
                 interval_order=interval_order
@@ -291,7 +291,7 @@ async def get_balance_trend_for_period(
                     "date_from": data.date_to.replace(tzinfo=None),
                     "date_to": datetime.utcnow(),
                 }
-                balance_trend_not_in_period = await get_balance_trend_for_accounts_which_not_in_period(
+                balance_trend_not_in_period = await _get_balance_trend_for_accounts_which_not_in_period(
                     session=session,
                     params=params,
                     rates=rates,
@@ -303,7 +303,7 @@ async def get_balance_trend_for_period(
     return balance_trend
 
 
-async def get_balance_trend_for_accounts_which_not_in_period(
+async def _get_balance_trend_for_accounts_which_not_in_period(
         session: AsyncSession,
         params: dict,
         rates: dict,
@@ -314,7 +314,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
     transactions_RawMapping = res.mappings().all()
     transactions = [dict(transaction) for transaction in transactions_RawMapping]
 
-    transactions = await convert_transactions_currency(
+    transactions = await _convert_transactions_currency(
         transactions=transactions,
         currency_key="currency",
         columns_to_convert=["balance_before"],
@@ -343,7 +343,7 @@ async def get_balance_trend_for_accounts_which_not_in_period(
     return balance_trend
 
 
-async def convert_transactions_currency(
+async def _convert_transactions_currency(
         transactions: list[dict],
         columns_to_convert: list[str],
         rates: dict,
@@ -370,7 +370,7 @@ def adjust_date_to(date_to) -> datetime:
     return date_to + delta
 
 
-def get_list_with_intervals(date_from: datetime, date_to: datetime, granularity: str) -> list[int]:
+def _get_list_with_intervals(date_from: datetime, date_to: datetime, granularity: str) -> list[int]:
     list_with_intervals = []
     if granularity == "hour":
         if date_to.hour > date_from.hour:
@@ -394,7 +394,7 @@ def get_list_with_intervals(date_from: datetime, date_to: datetime, granularity:
     return list_with_intervals
 
 
-def get_end_of_interval(date_from: datetime, granularity: str, interval_order: int) -> datetime:
+def _get_end_of_interval(date_from: datetime, granularity: str, interval_order: int) -> datetime:
     if granularity == "day":
         end_of_interval = date_from + timedelta(
             days=interval_order, hours=23, minutes=59, seconds=59, microseconds=5999
@@ -406,7 +406,7 @@ def get_end_of_interval(date_from: datetime, granularity: str, interval_order: i
     return end_of_interval
 
 
-async def do_db_request_and_get_transactions(session: AsyncSession, sql_code: str, params: dict) -> list[dict]:
+async def _do_db_request_and_get_transactions(session: AsyncSession, sql_code: str, params: dict) -> list[dict]:
     res = await session.execute(text(sql_code), params)
     transactions_RawMapping = res.mappings().all()
     transactions = [dict(transaction) for transaction in transactions_RawMapping]
