@@ -22,7 +22,7 @@ async def register(new_user: UserCreate | UserTelegramCreate):
     try:
         async with session_factory() as session:
             user = await create_user(session, new_user)
-        await send_email(user.email, user.verification_token)
+        # await send_email(user.email, user.verification_token)
         return user
     except EmailAlreadyExists as e:
         raise HTTPException(status_code=400, detail=str(e))

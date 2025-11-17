@@ -7,6 +7,11 @@ from app.domain.entities.category import Category
 
 class CategoryRepositoryInterface(ABC):
     @abstractmethod
+    async def get_categories(self, user_id: int) -> list[Category]:
+        pass
+
+
+    @abstractmethod
     async def delete_category_by_id(self, category: Category) -> Category:
         pass
 

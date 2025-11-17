@@ -49,3 +49,5 @@ async def do_post_request_to_create_user():
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{settings.APP_URL}/auth/register/", json=payload) as response:
             return response
+
+

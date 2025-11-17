@@ -1,5 +1,5 @@
-import pytest
-from sqlalchemy import select
+import pytest, asyncio
+from sqlalchemy import select, text
 
 from app.common.config import settings
 from app.common.security import hash_password
@@ -13,19 +13,24 @@ async def test_user_register_when_duplicate_email(client, session):
     res = await session.execute(stmt)
     user = res.scalar_one_or_none()
     if not user:
-        user_orm = UserOrm(name="test_user", hashed_password=hash_password("test_pass"), email="test@gmail.com")
+        user_orm = UserOrm(
+            name="test_user",
+            hashed_password=hash_password("test_pass"),
+            email="test@gmail.com",
+            utc_offset=5
+        )
         session.add(user_orm)
         await session.commit()
 
     payload = {
         "name": "test_user",
         "password": "test_password",
-        "email": "test@gmail.com"
+        "email": "test@gmail.com",
+        "utc_offset": 5
     }
 
-    async with client.post(f"{settings.APP_URL}/auth/register/", json=payload) as response:
+    async with client.post(f"/auth/register/", json=payload) as response:
         assert response.status == 400
-
 
 
 @pytest.mark.asyncio
@@ -41,10 +46,11 @@ async def test_user_register(client, session):
     payload = {
         "name": "test_user",
         "password": "test_password",
-        "email": "test@gmail.com"
+        "email": "test@gmail.com",
+        "utc_offset": 5
     }
 
-    async with client.post(f"{settings.APP_URL}/auth/register/", json=payload) as response:
+    async with client.post(f"/auth/register/", json=payload) as response:
         data = await response.json()
 
         assert response.status == 201
@@ -53,4 +59,3 @@ async def test_user_register(client, session):
         assert data["email"] == "test@gmail.com"
         assert data["created_at"]
         assert "password" not in data
-

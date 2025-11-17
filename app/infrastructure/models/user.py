@@ -17,7 +17,8 @@ class UserOrm(Base):
     utc_offset: Mapped[int] = mapped_column(nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, index=True)
     verification_token: Mapped[str | None] = mapped_column(unique=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
+    #created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("CURRENT_TIMESTAMP")) # for tests
 
     refresh_token: Mapped[Optional["RefreshTokenOrm"]] = relationship("RefreshTokenOrm",
                                                                  back_populates="user",

@@ -49,11 +49,6 @@ def decode_token(token: str) -> dict:
             status_code=401,
             detail="Invalid token"
         )
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=500,
-            detail="Public key not found"
-        )
 
 
 def create_verify_token():

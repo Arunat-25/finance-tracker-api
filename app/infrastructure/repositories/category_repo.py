@@ -15,6 +15,17 @@ class CategoryRepository(CategoryRepositoryInterface):
         self.session = session
 
 
+    async def get_categories(self, user_id: int) -> list[Category]:
+        stmt = select(CategoryOrm).where(
+            CategoryOrm.user_id == user_id,
+            CategoryOrm.is_deleted == False
+        )
+        result = await self.session.execute(stmt)
+        categories_orm = result.scalars().all()
+        categories = [self._orm_to_entity(category_orm) for category_orm in categories_orm]
+        return categories
+
+
     async def delete_category_by_id(self, category: Category) -> Category:
         stmt = select(CategoryOrm).where(
             CategoryOrm.id == category.category_id,

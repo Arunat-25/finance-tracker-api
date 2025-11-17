@@ -2,7 +2,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-ENV_PATH = BASE_DIR / '.env'
+ENV_PATH = BASE_DIR / '.test.env'
 
 class Settings(BaseSettings):
     DB_HOST: str
@@ -17,6 +17,8 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self):
+        if self.MODE == 'TEST':
+            return "sqlite+aiosqlite:///:memory:"
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 

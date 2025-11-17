@@ -11,6 +11,16 @@ from app.application.dtos.category_dto import CategoryDeleteDTO
 
 router = APIRouter(prefix="/category", tags=["category"])
 
+
+@router.get("/categories")
+async def get_categories(
+        user_id: int = Depends(get_current_user_id),
+        category_service: CategoryService = Depends(get_category_service)
+):
+    categories = await category_service.get_categories(user_id=user_id)
+    return categories
+
+
 @router.get("/create-system-categories")
 async def create_system_categories(
         user_id: int = Depends(get_current_user_id),

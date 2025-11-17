@@ -1,5 +1,3 @@
-from sqlalchemy.testing.suite.test_reflection import users
-
 from app.application.dtos.category_dto import CategoryCreateDTO, CategoryResponseDTO, CategoryDeleteDTO
 from app.domain.interfaces.category_interface import CategoryRepositoryInterface
 from app.domain.entities.category import Category
@@ -9,6 +7,12 @@ from app.domain.enums.category_type import CategoryTypeEnum
 class CategoryService:
     def __init__(self, category_repo: CategoryRepositoryInterface):
         self.category_repo = category_repo
+
+
+    async def get_categories(self, user_id: int) -> list[CategoryResponseDTO]:
+        categories_entity = await self.category_repo.get_categories(user_id)
+        categories = [self._entity_to_response_dto(category_entity) for category_entity in categories_entity]
+        return categories
 
 
     async def delete_category_by_id(self, dto: CategoryDeleteDTO):

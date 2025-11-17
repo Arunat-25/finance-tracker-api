@@ -1,3 +1,5 @@
+import asyncio
+
 import uvicorn
 
 from fastapi import FastAPI
@@ -16,7 +18,6 @@ app.include_router(category_router)
 
 app.include_router(transaction_router)
 app.include_router(analytics_router)
-
 
 
 if __name__ == "__main__":
