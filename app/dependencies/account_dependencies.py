@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.repositories.account_repo import AccountRepository
-from app.application.services.account_service import AccountService
+from app.application.use_cases.account_service import AccountService
 
 
 async def get_account_service(session: AsyncSession = Depends(get_db_session)) -> AccountService:

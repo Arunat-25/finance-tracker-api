@@ -7,7 +7,7 @@ from app.infrastructure.db.session import session_factory
 from app.endpoints.exceptions import NotFoundAccount, AccountAlreadyExists
 from app.schemas.account import AccountCreate, AccountDelete
 from app.application.dtos.account_dto import AccountCreateDTO, AccountDeleteDTO, AccountGetDTO
-from app.application.services.account_service import AccountService
+from app.application.use_cases.account_service import AccountService
 
 router = APIRouter(prefix="/account", tags=["account"])
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
 from app.application.dtos.category_dto import CategoryCreateDTO
-from app.application.services.category_service import CategoryService
+from app.application.use_cases.category_service import CategoryService
 from app.dependencies.auth import get_current_user_id
 from app.dependencies.category_dependencies import get_category_service
 from app.endpoints.exceptions import CategoryAlreadyExists, CategoryNotFound

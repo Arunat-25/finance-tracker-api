@@ -6,4 +6,5 @@ class AnalyticsRepository:
         self.session = session
 
 
-    async def get_overview_summary_data(self, ):
+    async def get_overview_summary_data(self):
+        pass
